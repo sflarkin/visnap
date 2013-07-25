@@ -5,7 +5,7 @@ import h5py
 from numpy import *
 import visnap
 import visnap.general.translate_filename as translate_filename
-#import pdb
+import pdb
 
 class new_halo:
     '''Create a new halo object'''
@@ -103,9 +103,15 @@ class new_halo:
         
         # Copy and set halo properties straight from catalog
         self.props = {}
+        self.units = {}
         for key in C.keys():
-            if 'RadialProfiles' not in key:
+            if 'RadialProfiles' not in key:                                
                 self.props[key] = C[key][...][arg]
+                try: unitname = C[key].attrs['unitname']
+                except KeyError: unitname = None
+                try: unitcgs = C[key].attrs['unitcgs']
+                except KeyError: unitcgs = None                
+                self.units[key] = {'unitname': unitname, 'unitcgs': unitcgs}
                 if key == 'ID':
                     self.id = C[key][...][arg]
 
@@ -130,12 +136,46 @@ class new_halo:
             print 'com_iffset = ', self.props['com_offset'] 
             print 'mbp_iffset = ', self.props['mbp_offset']
 
-    def track():
-        '''
-        Find halo tree and trace this halo properties back in time
-        '''
-        
 
+    def track(self, trees_path='./trees/', ncpus='all' ):
+        '''
+        Find this halo tree and trace its properties back in time. This only
+        works for Rockstar halos.
+
+        Input:
+         
+         trees_path - The path to the merger trees files
+
+         ncpus - If 'all' all the avilable cores in the node will be used, else set
+                 to the number of cores that you want to use
+         
+        Output:
+
+          halo_past_props - A dictionary containing the halo properties over time,
+                            all halo properties in the rockstar tree are included 
+                            with the same key names. 
+        '''
+        from visnap.general.halo_track import find_tree, halo_track
+        # Check if this halo comes from a Rockstar catalog
+        if not 'Rockstar' in self.catalog: 
+            print 'At the moment halo tracking only works for halos found using '\
+                'Rockstar'
+            sys.exit()
+        
+        # Get needed properties
+        halo_id = self.id    
+        snapshot = int(self.snapshot[-5:])
+        Lsnap = self.catalog_attrs['NUM_SNAPS'] - 1
+        trees_file_base = self.irate_file.rstrip('irate.hdf5')+'trees'
+        # Find tree
+        self.tree, self.depth_first_id = find_tree(halo_id, snapshot, Lsnap,
+                                                   trees_path, trees_file_base,
+                                                   ncpus)
+        # Track
+        self.past_props = halo_track(self.tree, self.depth_first_id,
+                                     trees_path, trees_file_base)
+        return self.past_props
+            
 
     def get_subhalos(self, rvir_factor=1.0, min_npart=100):
         '''

@@ -102,6 +102,7 @@ def save_to_hdf5(outname,colheads,trees,treenums,comments):
     for i in range(len(treenums)):
         tre = t.create_group('Tree_{0}'.format(treenums[i]))
         for j in range(len(colheads)):
+            if '/' in colheads[j]: colheads[j] = colheads[j].replace('/','_')
             tre.create_dataset(colheads[j],data=trees[i][j])
     f.close()
 
