@@ -18,6 +18,7 @@ from __future__ import division
 
 #! /usr/bin/python   
 import numpy as np
+import math
 import os, sys, time
 from glob import glob
 from optparse import OptionParser
@@ -93,6 +94,7 @@ halos = []
 write_out=True
 
 
+
 #-----start code --------------------
 for irate_file in irate_files:
     #simulation properties 
@@ -110,6 +112,15 @@ for irate_file in irate_files:
 ### to be changed later 
     halo1 = halos[0] 
     subhalo_list = halo1.get_subhalos(.3,1000)
+    if write_out==True:
+        iprefix1,iprefix2,junk=irate_file.split('.')
+        f = open('/home/karen/ResearchCode/centroid/gal_cat_'+iprefix1+\
+             '_'+iprefix2+'.txt','w')
+        f.write('#centroidInfer.py output:\n')
+        f.write('#This catalog is written using inputs from:')
+        f.write(irate_file+'\n')
+        for i in range(len(arg_list)):
+            f.write('#ttype'+str(i)+' = '+arg_list[i]+'\n')
 
     for i in range(len(subhalo_list)):
         subhalo1= halo1.subhalos[i]
@@ -138,33 +149,24 @@ for irate_file in irate_files:
         #compute the cosmological redshift from scale factor
         z_cosmo = 1./a - 1. 
 
-        print 'v3d is {0}'.format(v3d)
-        print 'center is {0}'.format(subh_center)
+        #print 'v3d is {0}'.format(v3d)
+        #print 'center is {0}'.format(subh_center)
         #compute radial velocities by first computing the unit vector:
         subh_ucenter = (subh_center - obs_pos)/np.sqrt(np.dot(subh_center-obs_pos,
                                                       subh_center-obs_pos))
-        print 'subh_ucenter is {0}'.format(subh_ucenter)
+        #print 'subh_ucenter is {0}'.format(subh_ucenter)
         # project the 3d velocity unto the radial direction
         v_rad = np.dot(v3d,subh_ucenter)*subh_ucenter
-        v_rad = np.linalg.norm(v_rad)
-        print 'length of subh_ucenter is {0}'.format(np.dot(subh_ucenter,
-                                                            subh_ucenter))
+        #divide by the unit vector in order to get the sign right
+        v_rad  = (v_rad / subh_ucenter)[0]                                        
         #ignore projection effects from position uncertainty
         v_rad_sigma = subhalo1.props['VelocityUncertainty']
         #----writing out the outputs -----
         if write_out ==True:
-            iprefix1,iprefix2,junk=irate_file.split('.')
-            print 'v_rad is {0}'.format(v_rad)
-            f = open('/home/karen/ResearchCode/centroid/gal_cat_'+iprefix1+\
-                         '_'+iprefix2+'.txt','w')
-            f.write('#centroidInfer.py output:\n')
-            f.write('#This catalog is written using inputs from:')
-            f.write(irate_file+'\n')
-            for i in range(len(arg_list)):
-                f.write('#ttype'+str(i)+' = '+arg_list[i]+'\n')
-            f.write('{0}\t{1}\t {2}\t{3}'.format(alpha,delta,v_rad,
+            f.write('{0}\t{1}\t{2}\t{3}\n'.format(alpha,delta,v_rad,
                                                      v_rad_sigma))
-            f.close()
+if write_out==True:
+    f.close()
             
 
 #draft of what the script looks like will clean up later
