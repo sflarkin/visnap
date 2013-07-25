@@ -16,8 +16,8 @@ output:
 '''
 from __future__ import division
 
-#! /usr/bin/python
-'''Template useful to start new analysis scripts utilizing VISNAP modules'''   
+#! /usr/bin/python   
+import numpy as np
 import os, sys, time
 from glob import glob
 from optparse import OptionParser
@@ -83,14 +83,17 @@ else:
 print "\nThe following %d IRATE files were parsed for analysis:\n"%len(irate_files),irate_files[:]
 print '' 
 
-#Do whatever you want below
-
-#example
 import visnap.general.translate_filename as translate_filename
 import visnap.general.find_halos as find_halos
 import visnap.plot.halo_profiles as plot_profiles
 
+#-----initialize some variables--------------------
+arg_list = ('objid','delta','rad','radv_sigma')
 halos = []
+write_out=True
+
+
+#-----start code --------------------
 for irate_file in irate_files:
     #simulation properties 
     simprops = translate_filename.hyades(irate_file)
@@ -100,25 +103,74 @@ for irate_file in irate_files:
                                                 'Snapshot00148', 'Rockstar')
     halos.append(zoom_halo)
     
-#fig, ax, lines, legends = plot_profiles.density_profiles(halos)
-halo1 = halos[0] 
-
+#fig, ax, lines, legends = plot_profiles.density_profiles(halos
 #simprop = visnap.general.translate_filename.hyades('GID_0650_12_1002_001_s01_h0.25_rockstar_irate.hdf5')
-subhalo_list = halos[0].get_subhalos()
-subhalo1= halos[0].subhalos[0]
-subhalo1.props['Vmax']
-#here are the intermediate properties that we want to fill our catalog with:
-v3d = subhalo1.props['Velocity']p
-center = subhalo1.props['Center']
-center_sigma=subhalo1.props['PositionUncertainty']
-v3d_sigma = subhalo1.props['VelocityUncertainty']
-h0 = halo1.catalog_attrs['h0']
-Ol = halo1.catalog_attrs['Ol']
-Om = halos[0].catalog_attrs['Om']
-a = halos[0].catalog_attrs['a']
-#compute the cosmological redshift from scale factor
-z = 1./a - 1. 
 
-print 'v3d is {0}'.format(v3d)
-print 'center is {0}'.format(center)
+####only get subhalos within .3 rvir and with 1000 particles 
+### to be changed later 
+    halo1 = halos[0] 
+    subhalo_list = halo1.get_subhalos(.3,1000)
 
+    for i in range(len(subhalo_list)):
+        subhalo1= halo1.subhalos[i]
+
+        #here are the intermediate properties that we want to fill our catalog
+        #with:
+        v3d = subhalo1.props['Velocity']
+        subh_center = subhalo1.props['Center']
+        subh_center_sigma=subhalo1.props['PositionUncertainty']
+        v3d_sigma = subhalo1.props['VelocityUncertainty']
+        h0 = halo1.catalog_attrs['h0']
+        Ol = halo1.catalog_attrs['Ol']
+        Om = halo1.catalog_attrs['Om']
+        a = halo1.catalog_attrs['a']
+        obs_posx = 0.
+        obs_posy = 0.
+        obs_posz = 0.
+        obs_pos = [obs_posx,obs_posy,obs_posz]
+        #have to think about if we want RA increase to +x or -x 
+        del_center = subh_center-obs_pos
+        del_r = np.linalg.norm(del_center)
+        delta = 180./np.pi*np.arcsin(del_center[1]/del_r) 
+        #have z=0 to be where RA = 0 
+        alpha = 180./np.pi*np.arctan(del_center[0]/del_center[2]) 
+
+        #compute the cosmological redshift from scale factor
+        z_cosmo = 1./a - 1. 
+
+        print 'v3d is {0}'.format(v3d)
+        print 'center is {0}'.format(subh_center)
+        #compute radial velocities by first computing the unit vector:
+        subh_ucenter = (subh_center - obs_pos)/np.sqrt(np.dot(subh_center-obs_pos,
+                                                      subh_center-obs_pos))
+        print 'subh_ucenter is {0}'.format(subh_ucenter)
+        # project the 3d velocity unto the radial direction
+        v_rad = np.dot(v3d,subh_ucenter)*subh_ucenter
+        v_rad = np.linalg.norm(v_rad)
+        print 'length of subh_ucenter is {0}'.format(np.dot(subh_ucenter,
+                                                            subh_ucenter))
+        #ignore projection effects from position uncertainty
+        v_rad_sigma = subhalo1.props['VelocityUncertainty']
+        #----writing out the outputs -----
+        if write_out ==True:
+            iprefix1,iprefix2,junk=irate_file.split('.')
+            print 'v_rad is {0}'.format(v_rad)
+            f = open('/home/karen/ResearchCode/centroid/gal_cat_'+iprefix1+\
+                         '_'+iprefix2+'.txt','w')
+            f.write('#centroidInfer.py output:\n')
+            f.write('#This catalog is written using inputs from:')
+            f.write(irate_file+'\n')
+            for i in range(len(arg_list)):
+                f.write('#ttype'+str(i)+' = '+arg_list[i]+'\n')
+            f.write('{0}\t{1}\t {2}\t{3}'.format(alpha,delta,v_rad,
+                                                     v_rad_sigma))
+            f.close()
+            
+
+#draft of what the script looks like will clean up later
+
+
+
+#do error propagation for radial velocity: 
+
+            
