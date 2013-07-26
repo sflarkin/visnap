@@ -1,18 +1,24 @@
 '''
 CentroidInfer.py made from template.py
-purposes: 
-gets the projected positions and velocities of the subhalos (galaxies)
+Author: Miguel Rocha <mrocha@gmail.com>
+Mostly put together by: Karen Y. Ng <karenyng@ucdavis.edu>
+Purposes: 
+gets the projected positions and radial velocities of the subhalos (galaxies)
 then calls Will 's existing modules for 
--creating bootstrap analysis
+-creating a fits map 
+-creating bootstrap analysis of the projected centroid based on biweight stats.
 -estimating galaxy centroids
 
+prequisites by William A. Dawson:
+CAT.py 
+CenterVarianceBoot.py 
 input: 
 irate_files 
 
 output:
-- a galaxy density map in physical units from catalog  
-- a galaxy density map that is returned by Will 's module
+- a galaxy density fits map   
 
+License: BSD
 '''
 from __future__ import division
 
@@ -23,6 +29,10 @@ import os, sys, time
 from glob import glob
 from optparse import OptionParser
 #import pdb
+
+#import modules written by Will 
+import CAT 
+#import CenterVarianceBoot
 
 if __name__ != '__main__':
     print '%s is only script, there is nothing to import from it.' % __name__
@@ -59,7 +69,6 @@ ext = options.ext
 path = options.path
 
 #Set the irate_files variable
-
 if irate_files == "":
     if '+' in ext:
         ext = ext.split("+")
@@ -77,11 +86,11 @@ elif "[" in irate_files:
 elif "," in irate_files:
     irate_files = irate_files.replace(" ","")
     irate_files = irate_files.split(",")
-    irate_files.sort()    
+    irate_files.sort()
 else:
     irate_files = [irate_files,]
 
-print "\nThe following %d IRATE files were parsed for analysis:\n"%len(irate_files),irate_files[:]
+print "\nThe following %d IRATE files were parased for analysis:\n"%len(irate_files),irate_files[:]
 print '' 
 
 import visnap.general.translate_filename as translate_filename
@@ -89,20 +98,26 @@ import visnap.general.find_halos as find_halos
 import visnap.plot.halo_profiles as plot_profiles
 
 #-----initialize some variables--------------------
-arg_list = ('objid','delta','rad','radv_sigma')
-halos = []
+colnames = ('ra','delta','v_rad','v_rad_sigma')
 write_out=True
-
-
+obs_posx = 0.
+obs_posy = 0.
+obs_posz = 0.
+c = 3.e5
+rabin = 200
+N_boot = 100
 
 #-----start code --------------------
+halos = []
 for irate_file in irate_files:
     #simulation properties 
     simprops = translate_filename.hyades(irate_file)
     zoom_id = simprops['zoom_id']
+    
+    #can find the snapshot number by doing $h5ls irate.hdf5 filename
     zoom_halo, dist = find_halos.find_zoom_halo('../650Box_clusters_zooms.txt',
-                                                zoom_id, irate_file,
-                                                'Snapshot00148', 'Rockstar')
+                                                zoom_id,irate_file,
+                                                'Snapshot00148','Rockstar')
     halos.append(zoom_halo)
     
 #fig, ax, lines, legends = plot_profiles.density_profiles(halos
@@ -111,30 +126,33 @@ for irate_file in irate_files:
 ####only get subhalos within .3 rvir and with 1000 particles 
 ### to be changed later 
     halo1 = halos[0] 
+    h0 = halo1.catalog_attrs['h0']
+    Ol = halo1.catalog_attrs['Ol']
+    Om = halo1.catalog_attrs['Om']
+    a = halo1.catalog_attrs['a']
+    
     subhalo_list = halo1.get_subhalos(.3,1000)
     if write_out==True:
         iprefix1,iprefix2,junk=irate_file.split('.')
-        f = open('/home/karen/ResearchCode/centroid/gal_cat_'+iprefix1+\
-             '_'+iprefix2+'.txt','w')
+        out_path = '/home/karen/ResearchCode/centroid/'
+        catalog = 'gal_cat_'+iprefix1+'_'+iprefix2  
+        prefix = catalog
+        f = open(out_path+catalog+'.txt','w')
         f.write('#centroidInfer.py output:\n')
         f.write('#This catalog is written using inputs from:')
         f.write(irate_file+'\n')
-        for i in range(len(arg_list)):
-            f.write('#ttype'+str(i)+' = '+arg_list[i]+'\n')
+        for i in range(len(colnames)):
+            f.write('#ttype'+str(i)+' = '+colnames[i]+'\n')
 
     for i in range(len(subhalo_list)):
         subhalo1= halo1.subhalos[i]
-
         #here are the intermediate properties that we want to fill our catalog
         #with:
         v3d = subhalo1.props['Velocity']
         subh_center = subhalo1.props['Center']
         subh_center_sigma=subhalo1.props['PositionUncertainty']
         v3d_sigma = subhalo1.props['VelocityUncertainty']
-        h0 = halo1.catalog_attrs['h0']
-        Ol = halo1.catalog_attrs['Ol']
-        Om = halo1.catalog_attrs['Om']
-        a = halo1.catalog_attrs['a']
+       
         obs_posx = 0.
         obs_posy = 0.
         obs_posz = 0.
@@ -152,8 +170,7 @@ for irate_file in irate_files:
         #print 'v3d is {0}'.format(v3d)
         #print 'center is {0}'.format(subh_center)
         #compute radial velocities by first computing the unit vector:
-        subh_ucenter = (subh_center - obs_pos)/np.sqrt(np.dot(subh_center-obs_pos,
-                                                      subh_center-obs_pos))
+        subh_ucenter = (subh_center - obs_pos)/np.sqrt(np.dot(subh_center-obs_pos,subh_center-obs_pos))
         #print 'subh_ucenter is {0}'.format(subh_ucenter)
         # project the 3d velocity unto the radial direction
         v_rad = np.dot(v3d,subh_ucenter)*subh_ucenter
@@ -166,13 +183,17 @@ for irate_file in irate_files:
             f.write('{0}\t{1}\t{2}\t{3}\n'.format(alpha,delta,v_rad,
                                                      v_rad_sigma))
 if write_out==True:
+    print out_path+catalog+'.txt has been saved'
     f.close()
-            
+#produces a FITS file 
+#CAT.numberdensity(catalog+'.txt', colnames, rabin, prefix, N_boot=N_boot) 
+#print prefix+'_nodensity.fits has been saved'
+#print 'using '+prefix+'_nodensity.fits as input for inferring centroid'
 
-#draft of what the script looks like will clean up later
+#-----inputs for inferring the centeroid -----
+#x_start = 
 
 
 
-#do error propagation for radial velocity: 
 
-            
+#CenterVarianceBoot.cent_n_var(prefix+'no_density.fits',id_sci,N_boot,x_start)
