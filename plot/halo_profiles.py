@@ -161,12 +161,12 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
             will be added to the given axes.
 
      figname - A string with a name for the created figure file,
-               this will be just pased to pylab.savefig(). 
+               this will be just pased to pylab.savefig(). Set to None if you
+               dont want to save the figure 
 
      fignumber - If the axes are not given a new figure will be creted with
                  this number, if set to -1 it will be given automatically by
-                 matplotlib.figure(). Set to None if yo dont want to save the
-                 figure  
+                 matplotlib.figure()
 
      markers
      markerssize
@@ -177,13 +177,12 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
      fontsize  - Size of font to use for labels
 
      showme - If not 0 the figure will be shown, otherwise it will only be
-              saved to a file. The the matplotlib figure, axes, and lines
+              saved to a file. The matplotlib figure, axes, and lines
               will be returned for further manipulation 
 
      legendnames - A list of strings with the names to give to the legends. If
                    None they will be auto generated 
      
-              
     Output:
 
      figure, axes, lines, legends - As returned by matplotlib when creating figures
@@ -201,7 +200,7 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
         fig, ax = set_axes.set_standard_axes(xlabel_string, ylabel_string,
                                              fignumber, fontsize)
 
-    # Find number of halos with different zoom id (zoom id given in irate file)
+    # Find number of halos with different zoom id (zoom id given in irate file name)
     simpropss = [halo.sim_props for halo in halo_objects]
     zoom_ids = [simprops['zoom_id'] for simprops in simpropss]
     NdiffHalos = len(set(zoom_ids))
@@ -209,21 +208,24 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
     # Loop over all halo objects
     lines = []
     legend_names = []
-    for hcount,halo in enumerate(halo_objects):
-        
-        Nhalos = len(halo_objects)
+    Nhalos = len(halo_objects)
+    for hcount,halo in enumerate(halo_objects):        
         if markers == None: markers = [None]*Nhalos
         if markerssize == None: markerssize = [None]*Nhalos
-        if colors == None:
+        if colors:
+            color = colors[hcount]
+        else:
+            color_list = visnap.plot.colors_list
             if NdiffHalos > 1: 
-                colors = zoom_ids 
+                color = color_list[int(zoom_ids[hcount])] 
             else:
-                colors = visnap.plot.colors_list
+                color = color_list[hcount]
 
         thisfig, thisax, thisline, thislegend =\
             density_profile(halo, ax, marker=markers[hcount],
                             markersize=markerssize[hcount], 
-                            color=colors[hcount], figname=None, showme=0)      
+                            color=colors[hcount], fontsize=fontsize,
+                            figname=None, showme=0)      
         
         lines.append(thisline)
         legend_names.append(thislegend)

@@ -146,6 +146,7 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
     irate.close()
     return halo_object, dist.min()
 
+
 def find_mostpart_halo(irate_file, snapshot, catalog):
     '''
     Find halo with the most number of particles
@@ -200,16 +201,20 @@ def find_mostpart_halo(irate_file, snapshot, catalog):
     return halo_object
 
 
-def find_subhalos(halo_object, rvir_factor=1.0, min_npart=100):
+def find_subhalos(halo_object, vcut_factor=0.05, rcut_factor=1.0, min_npart=100):
     '''
     Find the subhalos of the given halo 
 
     Input
+ 
+     halo_object - A halo object as returned by visnap.general.halo.new_halo()
 
-    rvir_factor - Only subhalos with r < rvir_factor*host_Rvir will be returned            
+     vcut_factor - The lowest subhalo vmax to consider in units of the host Vmax
 
-    min_npart - Only subhalos with at least min_npart number of particles
-                will be included 
+     rcut_factor - Only subhalos with r < rcut_factor*host_Rvir will be returned            
+  
+     min_npart - Only subhalos with at least min_npart number of particles
+                 will be included 
     
     Output
 
@@ -237,21 +242,25 @@ def find_subhalos(halo_object, rvir_factor=1.0, min_npart=100):
             hosts = C['Hosts'][...]
 
     npart = C['npart'][...]  
+    vmax = C['Vmax'][...] 
+    center  = C['Center'][...]
+    center_units = C['Center'].attrs['unitname']
     host_center = host.props['Center']
     host_velocity = host.props['Velocity']
     host_rvir, host_vmax = host.props['Rvir'], host.props['Vmax']
-    center_units = C['Center'].attrs['unitname']
-    center  = C['Center'][...]
+    
+    
     R = sqrt((center[:,0] - host_center[0])**2 +
              (center[:,1] - host_center[1])**2 +
              (center[:,2] - host_center[2])**2)
     if 'Mpc' in center_units:
         R = R*1000
 
-    print "Selecting all subhalos with more than %d particles within %g*Rvir "\
-        "of the host" % (min_npart, rvir_factor)
+    print "Selecting all subhalos with more than %d particles within %gRvir "\
+        "of the host and with vmax > %g km/s" % (min_npart, rcut_factor, vcut_factor*host_vmax)
     sub_cut = argwhere((hosts != -1) & (npart > min_npart) & 
-                       (R < rvir_factor*host_rvir) & (R > 0))[:,0]
+                       (vmax > vcut_factor*host_vmax) & 
+                       (R < rcut_factor*host_rvir) & (R > 0))[:,0] 
     
     subhalo_list = []
     print 'Generating subhalo list'

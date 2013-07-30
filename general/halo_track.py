@@ -5,7 +5,7 @@ import h5py
 from numpy import *
 from multiprocessing import Process, Queue, cpu_count
 from visnap.general.rockstar_trees2irate import trees2irate
-import pdb
+#import pdb
 
 def find_tree(orig_halo_id, orig_snapshot, Lsnap, trees_path,
               trees_file_base='tree', ncpus='all'):
@@ -169,7 +169,6 @@ def halo_track(tree_name, halo_depth_first_ID, trees_path,
 
     # We first start the dictionary with the properties at the current time of the halo
     for key in tree.keys():
-        if key == 'T': continue
         halo_past_props[key] = tree[key][...][df_id == halo_depth_first_ID]
     
     # Then we use the depth_first_ID to go back in time followint the MMP and record the halo properties  
@@ -180,7 +179,6 @@ def halo_track(tree_name, halo_depth_first_ID, trees_path,
     max_df_id = df_id.max()
     while((old_scale > new_scale) and (new_df_id <= max_df_id)):
         for key in tree.keys():
-            if key == 'T': continue
             halo_past_props[key] = append(halo_past_props[key], tree[key][...][df_id == new_df_id])
         old_scale = new_scale
         new_df_id = new_df_id + 1

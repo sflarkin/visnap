@@ -177,16 +177,19 @@ class new_halo:
         return self.past_props
             
 
-    def get_subhalos(self, rvir_factor=1.0, min_npart=100):
+    def get_subhalos(self,  vcut_factor=0.05, rcut_factor=1.0, min_npart=100):
         '''
         Find the subhalos of this halo and create list of halo objects from
         them, make this list available for later use as self.subhalos 
 
         Input
 
-         rvir_factor - Only subhalos with r < rvir_factor*host_Rvir will be
+         vcut_factor - The lowest subhalo vmax to consider in units of the 
+                       host Vmax
+
+         rcut_factor - Only subhalos with r < rcut_factor*host_Rvir will be
                        returned
-            
+   
          min_npart - Only subhalos with at least min_npart number of particles
                      will be included 
                   
@@ -196,11 +199,9 @@ class new_halo:
         '''
         from visnap.general.find_halos import find_subhalos
         
-        try:
-            subhalo_list = self.subhalos
-        except AttributeError:
-            subhalo_list = find_subhalos(self, rvir_factor, min_npart)
-            self.subhalos = subhalo_list
+        subhalo_list = find_subhalos(self, vcut_factor, rcut_factor,
+                                     min_npart) 
+        self.subhalos = subhalo_list
 
         return subhalo_list    
        

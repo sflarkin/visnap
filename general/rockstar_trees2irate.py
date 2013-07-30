@@ -1,5 +1,6 @@
 #! /usr/bin/python
 '''Scriptable module with tools to write rockstar trees into an IRATE file'''
+import pdb
 
 def read_trees(fname):
     '''
@@ -18,9 +19,9 @@ def read_trees(fname):
         dopbar = True
     except ImportError:
         dopbar = False    
-    if os.path.isfile('tmp.txt'):
-        print "There's a file in the current directory named 'tmp.txt', which would get overwritten by this script.  Please rename or remove that file."
-        sys.exit(1337)
+#    if os.path.isfile('tmp.txt'):
+#        print "There's a file in the current directory named 'tmp.txt', which would get overwritten by this script.  Please rename or remove that file."
+#        sys.exit(1337)
     from numpy import loadtxt
     from StringIO import StringIO
     print "Opening {0}".format(fname)
@@ -102,7 +103,8 @@ def save_to_hdf5(outname,colheads,trees,treenums,comments):
     for i in range(len(treenums)):
         tre = t.create_group('Tree_{0}'.format(treenums[i]))
         for j in range(len(colheads)):
-            if '/' in colheads[j]: colheads[j] = colheads[j].replace('/','_')
+            if '/' in colheads[j]:
+                colheads[j] = colheads[j].replace('/','_')
             tre.create_dataset(colheads[j],data=trees[i][j])
     f.close()
 
