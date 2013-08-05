@@ -172,7 +172,7 @@ for irate_file in irate_files:
     halos.append(zoom_halo)
     
     halo1 = halos[0] 
-    #try to put the location of the observer at different projected view 
+    #try to put the location of the observer at different projected views 
     obs_posx = halo1.props['Center'][0]#0.
     obs_posy = 0. #halo1.props['Center'][1]#0.
     obs_posz = halo1.props['Center'][2]#0.
