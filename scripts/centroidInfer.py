@@ -29,11 +29,8 @@ import os, sys, time
 import matplotlib.pyplot as plt
 from glob import glob
 from optparse import OptionParser
-#import pdb
+import pdb
 
-#import modules written by Will 
-import CAT 
-#import CenterVarianceBoot
 def ang_coord(subhalo1,obs_pos):
     '''
     Purposes: computes the line of angular coordinates based on
@@ -56,6 +53,7 @@ def ang_coord(subhalo1,obs_pos):
     alpha = 180./np.pi*np.arctan(del_center[0]/del_center[2]) 
 
     return alpha,delta 
+
 def proj_v_rad(subhalo1,obs_pos):
     '''
     This function returns the projected radial velocity of a particular subhalo
@@ -70,6 +68,7 @@ def proj_v_rad(subhalo1,obs_pos):
     v3d = subhalo1.props['Velocity']
     subh_center = subhalo1.props['Center']
     #have to think about if we want RA increase to +x or -x 
+
     del_center = subh_center-obs_pos
     #compute radial velocities by first computing the unit vector:
     subh_ucenter = (subh_center - obs_pos)/\
@@ -78,8 +77,13 @@ def proj_v_rad(subhalo1,obs_pos):
     v_rad = np.dot(v3d,subh_ucenter)*subh_ucenter
     #divide by the unit vector in order to get the sign right
     v_rad  = (v_rad / subh_ucenter)[0]                                        
+    if np.isnan(v_rad)==True:
+        print 'visnap.centroidInfer.proj_v_rad:\n'
+        print 'NAN value detected'
+        sys.exit()
 
     return v_rad 
+
 if __name__ != '__main__':
     print '%s is only script, there is nothing to import from it.' % __name__
     sys.exit()
@@ -145,13 +149,11 @@ import visnap.general.find_halos as find_halos
 import visnap.plot.halo_profiles as plot_profiles
 
 #-----initialize some variables--------------------
-colnames = ('ra','delta','v_rad','v_rad_sigma')
+colnames = ('ra','delta','v_rad','v_rad_sigma','centerx','centery','centerz',
+            'center_sigma','vmax')
 write_out=True
-obs_posx = 0.
-obs_posy = 0.
-obs_posz = 0.
-obs_pos = [obs_posx,obs_posy,obs_posz]
-c = 3.e5
+prefix = 'gal_cat_xz-plane'
+c = 3.e5 #in km/s
 rabin = 200
 N_boot = 100
 out_path = '/home/karen/ResearchCode/centroid/'
@@ -169,9 +171,12 @@ for irate_file in irate_files:
                                                 'Snapshot00148','Rockstar')
     halos.append(zoom_halo)
     
-####only get subhalos within .3 rvir and with 1000 particles 
-### to be changed later 
     halo1 = halos[0] 
+    #try to put the location of the observer at different projected view 
+    obs_posx = halo1.props['Center'][0]#0.
+    obs_posy = 0. #halo1.props['Center'][1]#0.
+    obs_posz = halo1.props['Center'][2]#0.
+    obs_pos = [obs_posx,obs_posy,obs_posz]
     h0 = halo1.catalog_attrs['h0']
     Ol = halo1.catalog_attrs['Ol']
     Om = halo1.catalog_attrs['Om']
@@ -179,74 +184,52 @@ for irate_file in irate_files:
     haloRA,haloDEC = ang_coord(halo1,obs_pos) 
     halo_v_rad = proj_v_rad(halo1,obs_pos)
 
-    subhalo_list = halo1.get_subhalos(0.3)
+    subhalo_list = halo1.get_subhalos(1.5)
     if write_out==True:
         iprefix1,iprefix2,junk=irate_file.split('.')
-        catalog = 'gal_cat_'+iprefix1+'_'+iprefix2  
+        catalog = prefix+'.txt' 
        
-        prefix = catalog
-        print 'opening file: '+prefix+'.txt for catalog output'
-        f = open(out_path+catalog+'.txt','w')
-        f.write('#centroidInfer.py output:\n')
+        print 'opening file: '+catalog+' for catalog output'
+        f = open(out_path+catalog,'w')
+        f.write('#visnap.scripts.centroidInfer.py output:\n')
         f.write('#This catalog is written using inputs from:\n')
         f.write('#'+irate_file+'\n')
 
         f.write('#The host halo properties are \n'+\
-        '#\t{0}\t {1}\t {2}\t{3}\n'.format(haloRA,haloDEC,
+        '#RA Dec v_sigma centerx centery centerz center_sigma vmax rvir mvir\n'+\
+        '#\t{0}\t {1}\t {2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10:1.5e}\n'.format(haloRA,
+                                        haloDEC,
                                         halo_v_rad,
-                                        halo1.props['VelocityUncertainty']))
-#        f.write('#The host halo radial velocity is '+\
-#        '{0} {1}\n'.format(halo_v_rad,halo1.units['Velocity']['unitname']))
+                                        halo1.props['VelocityUncertainty'],
+                                        halo1.props['Center'][0],
+                                        halo1.props['Center'][1],
+                                        halo1.props['Center'][2],
+                                        halo1.props['PositionUncertainty'],
+                                        halo1.props['Vmax'],
+                                        halo1.props['Rvir'],
+                                        halo1.props['Mvir']))
+                                             
         f.write('#based on the observer at :{0}\n'.format(obs_pos))
         for i in range(len(colnames)):
             f.write('#ttype'+str(i)+' = '+colnames[i]+'\n')
     
     for i in range(len(subhalo_list)):
         subhalo1= halo1.subhalos[i]
-        #v3d = subhalo1.props['Velocity']
-        #subh_center = subhalo1.props['Center']
-        #subh_center_sigma=subhalo1.props['PositionUncertainty']
-        #v3d_sigma = subhalo1.props['VelocityUncertainty']
-
-        # #have to think about if we want RA increase to +x or -x 
-        # del_center = subh_center-obs_pos
-        # del_r = np.linalg.norm(del_center)
-        # delta = 180./np.pi*np.arcsin(del_center[1]/del_r) 
-        # #have z=0 to be where RA = 0 
-        # alpha = 180./np.pi*np.arctan(del_center[0]/del_center[2]) 
-
-        # #compute the cosmological redshift from scale factor
-        # #have to think about how to do this correctly
-        # #z_cosmo = 1./a - 1. 
-
-        # #compute radial velocities by first computing the unit vector:
-        # subh_ucenter = (subh_center - obs_pos)/\
-        #     np.sqrt(np.dot(subh_center-obs_pos,subh_center-obs_pos))
-        # # project the 3d velocity unto the radial direction
-        # v_rad = np.dot(v3d,subh_ucenter)*subh_ucenter
-        # #divide by the unit vector in order to get the sign right
-        # v_rad  = (v_rad / subh_ucenter)[0]                                        
         alpha, delta = ang_coord(subhalo1, obs_pos)
         v_rad = proj_v_rad(subhalo1, obs_pos) 
         #ignore projection effects from position uncertainty
         v_rad_sigma = subhalo1.props['VelocityUncertainty']
         #----writing out the outputs -----
         if write_out ==True:
-            f.write('{0}\t{1}\t{2}\t{3}\n'.format(alpha,delta,v_rad,
-                                                     v_rad_sigma))
+            f.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\n'.format(alpha,
+                                                      delta,
+                                                      v_rad,
+                                                      v_rad_sigma,
+                                                      subhalo1.props['Center'][0],
+                                                      subhalo1.props['Center'][1],
+                                                      subhalo1.props['Center'][2],
+                                                      subhalo1.props['PositionUncertainty'],
+                                                      subhalo1.props['Vmax']))
     if write_out==True:
         f.close()
 
-#produces a FITS file 
-#CAT.numberdensity(catalog+'.txt', colnames, rabin, prefix, N_boot=N_boot) 
-#print prefix+'_nodensity.fits has been saved'
-#print 'using '+prefix+'_nodensity.fits as input for inferring centroid'
-
-#-----inputs for inferring the centeroid -----
-#x_start = 
-
-#CenterVarianceBoot.cent_n_var(prefix+'no_density.fits',id_sci,N_boot,x_start)
-
-#-----example code-------------------------------------------------------#
-#fig, ax, lines, legends = plot_profiles.density_profiles(halos
-#simprop = visnap.general.translate_filename.hyades('GID_0650_12_1002_001_s01_h0.25_rockstar_irate.hdf5')

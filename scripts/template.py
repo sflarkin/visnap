@@ -77,8 +77,10 @@ halos = []
 for irate_file in irate_files:
     simprops = translate_filename.hyades(irate_file)
     zoom_id = simprops['zoom_id']
-    zoom_halo, dist = find_halos.find_zoom_halo('../650Box_clusters_zooms.txt', zoom_id,
-                                                irate_file, 'Snapshot00148', 'Rockstar')
+    zoom_halo, dist = find_halos.find_zoom_halo('../650Box_clusters_zooms.txt',
+                                                zoom_id,
+                                                irate_file, 'Snapshot00148',
+                                                'Rockstar')
     halos.append(zoom_halo)
     
 #fig, ax, lines, legends = plot_profiles.density_profiles(halos)
