@@ -5,7 +5,7 @@ import h5py
 from numpy import *
 import visnap
 import visnap.general.translate_filename as translate_filename
-import pdb
+#import pdb
 
 class new_halo:
     '''Create a new halo object'''
@@ -164,13 +164,12 @@ class new_halo:
         
         # Get needed properties
         halo_id = self.id    
-        snapshot = int(self.snapshot[-5:])
-        Lsnap = self.catalog_attrs['NUM_SNAPS'] - 1
-        trees_file_base = self.irate_file.rstrip('irate.hdf5')+'trees'
+        scale = self.catalog_attrs['a']
+        trees_file_base = self.irate_file.split('/')[-1]
+        trees_file_base = trees_file_base.rstrip('irate.hdf5')+'trees'
         # Find tree
-        self.tree, self.depth_first_id = find_tree(halo_id, snapshot, Lsnap,
-                                                   trees_path, trees_file_base,
-                                                   ncpus)
+        self.tree, self.depth_first_id = find_tree(halo_id, scale, trees_path,
+                                                   trees_file_base, ncpus)
         # Track
         self.past_props = halo_track(self.tree, self.depth_first_id,
                                      trees_path, trees_file_base)
@@ -206,21 +205,26 @@ class new_halo:
         return subhalo_list    
        
      
-    def get_profiles(self, Ncpus='all', Nbins=50, remove_subs=False):
+    def get_profiles(self, particles_file=None, Nbins=50, Ncpus='all',
+                     remove_subs=False): 
         '''
         Get the radial profiles of this halo and set them up
         as attributes for future use
 
         Input:
 
+         particles_file - The rockstar particles files containing the particle
+                          information  for the halo with ID = rockstar_halo_id.
+                          If None it will be searched based on the IRATE filename
+     
+         Nbins - Nuber of bins to use when calculating profiles
+                 for Rockstar halos
+
          Ncpus - For rockstar catalogs the particle data can be
                  extracted in parallel. Set ncpus to 'all'
                  to use all the available cores in the node, else
                  set to the number of cores you want to use
-
-         Nbins - Nuber of bins to use when calculating profiles
-                 for Rockstar halos
-
+         
          remove_subs - If True the particles of the subhalos will be removed
                        and only the smooth halo distribution will be used         
         '''
@@ -248,10 +252,8 @@ class new_halo:
                 'particle data, this could take some time when '\
                 'done for the first time'
             
-            particles_file = self.irate_file.rstrip(self.irate_file.split('/')[-1]) \
-                + 'halos_'+ str(int(self.snapshot.strip('/Snapshot'))) \
-                + '.particles'
-            
+            pfile_ext = str(int(self.snapshot.strip('/Snapshot'))) + '.particles'
+            particles_file = self.irate_file.replace('irate.hdf5',pfile_ext)
             pdata = hp.get_rockstar_halo_particles(self.id, particles_file,
                                                    snap, Ncpus)
             if remove_subs:

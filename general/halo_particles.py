@@ -3,9 +3,11 @@ Module containing tools to find and get all particles belonging to
 a halo, and to calculate stuff from the full particle information.  
 '''
 
+import time
 from numpy import *
 from multiprocessing import Process, Queue, cpu_count
 from visnap.general.rockstar import read_rockstar_header
+#import pdb
 
 def get_rockstar_halo_particles(rockstar_halo_id, particles_file,
     sanpshot_group, ncpus='all', use_txt_file=0):
@@ -13,7 +15,7 @@ def get_rockstar_halo_particles(rockstar_halo_id, particles_file,
     Get particles belonging to a halo in a Rockstar catalog
 
     Input:
-     rockstar_halo_id - The rockstar catalog halo ID of the halo for which             
+     rockstar_halo_id - The rockstar catalog halo ID of the halo for which
                         particles are to be found  
  
      particles_file - The rockstar particles files containing the particle
@@ -232,26 +234,38 @@ def calculate_profiles(part_data, hcenter, hvelocity, nbins=15):
     Generate radial profiles from full particle data
 
     Input:
+
      part_data - particle data array [x,y,z,vx,vy,vz]
+
      hcenter - the halo center
+
      hvelocity - the halo bulk velocity
+
      nbins - number of bins in r
 
     Output:
+
      rmid - the mid point r for that r bin
+
      Ninshell - number of particles in bin
+
      Nenclosed - number of particles with r<rmid
+
      dens - number density for that bin 
+
      avgDens - average number density < rmid (eclosed density)
+
      vdisp - total velocity dispersion profile
     '''
+    # ignore divide by zero and invalid operation warnings
+    seterr(divide='ignore', invalid='ignore') 
 
     part_data,hcenter,hvelocity = part_data.astype(float),hcenter.astype(float),hvelocity.astype(float)
     x,y,z = part_data[:,0]-hcenter[0],part_data[:,1]-hcenter[1],part_data[:,2]-hcenter[2]  
     vx,vy,vz = part_data[:,3]-hvelocity[0],part_data[:,4]-hvelocity[1],part_data[:,5]-hvelocity[2]
     r = sqrt(x*x + y*y + z*z) 
     
-    radbins = logspace(log10(r.min()),log10(r.max()),num=nbins)
+    radbins = logspace(log10(r[r != 0].min()),log10(r.max()),num=nbins)
     rmid =  zeros(len(radbins),dtype='float')
     Ninshell = zeros(len(radbins))
     Nenclosed = zeros(len(radbins))

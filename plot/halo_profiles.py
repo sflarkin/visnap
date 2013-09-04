@@ -63,8 +63,12 @@ def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1
     # Open halo object
     halo = halo_object
     halo_props = halo.props
-    print 'Plotting density profile of halo %d from %s/%s/%s' %\
-        (halo.id, halo.irate_file, halo.snapshot, halo.catalog)
+    try:
+        print 'Plotting density profile of halo %d from %s/%s/%s' %\
+            (halo.id, halo.irate_file, halo.snapshot, halo.catalog)
+    except AttributeError:
+        print 'Plotting density profile of halo %s from %s/%s' %\
+            (halo.id, halo.irate_file, halo.snapshot)
     halo.print_properties()
     
     # Generate profiles if not there already
@@ -79,23 +83,30 @@ def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1
     # Plot
     h = visnap.h
     r, dens = abs(halo.profiles['r']), halo.profiles['dens']
-    x = r[argwhere(r > rmin)]/h
-    y = dens[argwhere(r > rmin)]*h**2/10.0**9
-
     simprops = halo.sim_props
     dmName = simprops['dmName']
+    if dmName == 'nonCosmo':
+        x = r[argwhere(r > rmin)]
+        y = dens[argwhere(r > rmin)]/10.0**9
+    else:    
+        x = r[argwhere(r > rmin)]/h
+        y = dens[argwhere(r > rmin)]*h**2/10.0**9
+
     mpdmS = '%.1e' %  simprops['mpdm']
     mpdmS = mpdmS.split('+')
     mpdmS = mpdmS[0]+mpdmS[1].lstrip('0')
     if color == None: color = 'k'
-    if dmName == 'CDM':
+    if (dmName == 'CDM') or (dmName == 'nonCosmo'):
         if marker == None:  marker = '.'
         if markersize == None: markersize = 18
         line = ax.loglog(x, y, color=color, marker=marker, ms=markersize,
                          linewidth=0) 
-        if not legendname:    
-            legendname = ['halo'+str(int(halo.id))+'\_'
-                          +dmName+'\_mpdm'+mpdmS]
+        if not legendname:
+            if (dmName == 'nonCosmo'):
+                legendname = [str(halo.id)+'\_mpdm'+mpdmS]
+            else:    
+                legendname = ['halo'+str(int(halo.id))+'\_'
+                              +dmName+'\_mpdm'+mpdmS]
     elif dmName == 'WDM':
         if marker == None:  marker = '^'
         if markersize == None: markersize = 10
@@ -202,8 +213,12 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
 
     # Find number of halos with different zoom id (zoom id given in irate file name)
     simpropss = [halo.sim_props for halo in halo_objects]
-    zoom_ids = [simprops['zoom_id'] for simprops in simpropss]
-    NdiffHalos = len(set(zoom_ids))
+    try:
+        zoom_ids = [simprops['zoom_id'] for simprops in simpropss]
+        NdiffHalos = len(set(zoom_ids))
+    except KeyError:
+        zoom_ids = arange(len(halo_objects))
+        NdiffHalos = zoom_ids.size
        
     # Loop over all halo objects
     lines = []
@@ -224,7 +239,7 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
         thisfig, thisax, thisline, thislegend =\
             density_profile(halo, ax, marker=markers[hcount],
                             markersize=markerssize[hcount], 
-                            color=colors[hcount], fontsize=fontsize,
+                            color=color, fontsize=fontsize,
                             figname=None, showme=0)      
         
         lines.append(thisline)

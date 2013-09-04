@@ -1,5 +1,7 @@
 '''Module containing tools useful to handle Rockstar catalogs and files'''
 
+from numpy import *
+
 def read_rockstar_header(rockstar_file):
     '''
     Read rockstar ASCII headers

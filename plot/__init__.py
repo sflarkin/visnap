@@ -2,7 +2,7 @@
  
 from pylab import rc, seterr
 
-oldset = seterr(all='ignore') # turn warnings off
+#oldset = seterr(all='ignore') # turn all warnings off
 
 #Change some of the default matplotlib configuration options
 

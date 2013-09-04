@@ -1,5 +1,6 @@
 '''Module containing model functions for radial profiles'''
 
+from numpy import *
 
 def rhoNFW(logr, param):
     '''NFW density profile,  param = (normalization, scale_radius)'''
