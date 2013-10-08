@@ -50,11 +50,13 @@ def read_trees(fname):
                 #temp.write(thistree)
                 #temp.close()
                 trees.append(loadtxt(StringIO(thistree),unpack=True))
+                nread = nread + 1
                 if dopbar:
-                    nread = nread + 1
                     pbar.update(nread)
                 else:
-                    print "Finished tree number {0}".format(treenums[-2])
+                    if not nread%1000:
+                        print "READING TREES: %d trees have been read" % nread
+                    #print "Finished tree number {0}".format(treenums[-2])
                 thistree = ""
         elif startedtrees:
             thistree = thistree + line
@@ -74,6 +76,7 @@ def read_trees(fname):
         pbar.finish()
     else:
         print "Reading final tree and saving it..."
+        print "A total of %d trees where read" % nread
     trees.append(loadtxt(StringIO(thistree),unpack=True))
     #print "Removing temporary file tmp.txt"
     #os.remove('tmp.txt')

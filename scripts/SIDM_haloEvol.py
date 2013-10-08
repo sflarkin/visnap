@@ -1,5 +1,8 @@
 #! /usr/bin/python
-'''Template useful to start new analysis scripts utilizing VISNAP modules'''    
+'''
+Script to analyse halo density profiles and rotation curves over time, 
+and to compare them between SIDM and CDM halos.
+'''    
 
 import os, sys, time
 from glob import glob
@@ -62,20 +65,44 @@ print ''
 
 #Do whatever you want below
 
-#example
-import visnap.general.translate_filename as translate_filename
+#Import stuff we will need
+import h5py
+from numpy import *
+import visnap.plot
 import visnap.general.find_halos as find_halos
 import visnap.plot.halo_profiles as plot_profiles
 
+#Get halos for analysis
 halos = []
 for irate_file in irate_files:
-    simprops = translate_filename.hyades(irate_file)
-    zoom_id = simprops['zoom_id']
-    zoom_halo, dist = find_halos.find_zoom_halo('650Box_clusters_zooms.txt', zoom_id,
-                                                irate_file, 'Snapshot00148', 'Rockstar')
-    halos.append(zoom_halo)
+    for snap in range(10, 16):
+        halo = find_halos.find_mostpart_halo(irate_file, snap, 'Rockstar')
+        halos.append(halo)
+
+#Now halos is a list of halo objects containing the halo with the most number 
+#of particles for snapshots 1-15 in all the given IRATE files
+
+#Assign a label, color and marker to each of these halos (for plotting)  
+labels = []
+markers = []
+for halo in halos:
+    dmName = halo.sim_props['dmName']
+    if dmName == 'CDM': marker = '-'
+    else: marker = '--'
+    markers.append(marker)
+
+    redshift = 1/halo.catalog_attrs['a'] - 1
+    Vmax = halo.props['Vmax']
+    Mvir = halo.props['Mvir']    
+    labels.append(dmName+'\_'+str(round(redshift,2))+'\_'+str(round(Vmax))[:-2])
     
-fig, ax, lines, legends = plot_profiles.density_profiles(halos)
- 
+colors_list = visnap.plot.colors_list
+nhalos = len(halos)
+colors = concatenate((colors_list[0:nhalos/2], colors_list[0:nhalos/2]))
+
+#Select which halos to plot
+
+fig, ax, lines, legends = plot_profiles.density_profiles(halos, colors=colors, legendnames=labels)
+fig, ax, lines, legends = plot_profiles.circular_velocities(halos, colors=colors,legendnames=labels)
 
 
