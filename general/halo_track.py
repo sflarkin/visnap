@@ -49,7 +49,7 @@ def find_tree(orig_halo_id, scale, trees_path, trees_file_base='tree',
             trees2irate(tree_files[0], trees_path+trees_file_base+'.hdf5')
         else:
             print "The Rockstar trees file %s was not found" % (trees_path+trees_file_base+'_*.dat')
-            sys.exit()
+            raise IOError
 
     #Now we want to look for the tree containing this halo. We do this in parallel using ncores.
     

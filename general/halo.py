@@ -137,7 +137,7 @@ class new_halo:
             print 'mbp_iffset = ', self.props['mbp_offset']
 
 
-    def track(self, trees_path='./trees/', ncpus='all' ):
+    def track(self, trees_path='./trees/', trees_file_base='tree', ncpus='all' ):
         '''
         Find this halo tree and trace its properties back in time. This only
         works for Rockstar halos.
@@ -145,6 +145,8 @@ class new_halo:
         Input:
          
          trees_path - The path to the merger trees files
+
+         trees_file_base - The base name of the trees files
 
          ncpus - If 'all' all the avilable cores in the node will be used, else set
                  to the number of cores that you want to use
@@ -165,11 +167,26 @@ class new_halo:
         # Get needed properties
         halo_id = self.id    
         scale = self.catalog_attrs['a']
-        trees_file_base = self.irate_file.split('/')[-1]
-        trees_file_base = trees_file_base.rstrip('irate.hdf5')+'trees'
+        
+            
         # Find tree
-        self.tree, self.depth_first_id = find_tree(halo_id, scale, trees_path,
-                                                   trees_file_base, ncpus)
+        try:
+            self.tree, self.depth_first_id = find_tree(halo_id, scale, trees_path,
+                                                       trees_file_base, ncpus)
+        except IOError:
+            try:
+                trees_file_base = self.irate_file.split('/')[-1]
+                trees_file_base = trees_file_base.rstrip('irate.hdf5')+'trees'
+                self.tree, self.depth_first_id = find_tree(halo_id, scale,
+                                                           trees_path,
+                                                           trees_file_base, ncpus)
+            except IOError:
+                print 'The merger trees files were not found, use the trees_path '\
+                    'and trees_file_base inputs to give the correct location and '\
+                    'base name of the trees files'
+                sys.exit()
+                
+        
         # Track
         self.past_props = halo_track(self.tree, self.depth_first_id,
                                      trees_path, trees_file_base)
