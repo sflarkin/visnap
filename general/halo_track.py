@@ -18,7 +18,7 @@ def find_tree(orig_halo_id, scale, trees_path, trees_file_base='tree',
      orig_halo_id - Halo ID in the Rockatar catalog where this halo was
                     originally found 
 
-     scale - Scale factor at whcih this halo was originally found
+     scale - Scale factor at which this halo was originally found
 
      trees_path - The path to the merger trees files
 
@@ -118,15 +118,15 @@ def find_tree(orig_halo_id, scale, trees_path, trees_file_base='tree',
     # for multiple trees returned just in case    
     found_tree = [out_que.get() for i in range(out_que.qsize())]
     if len(found_tree) == 0:
-        print 'A tree containing halo %d at a = %d was not found'%(orig_halo_id,scale)                 
+        print 'A tree containing halo %d at a = %g was not found'%(orig_halo_id,scale)                 
     elif len(found_tree) > 1:
-        print 'WARNING: Multiple trees found to contain halo %d at a = %d'%(orig_halo_id,scale) 
+        print 'WARNING: Multiple trees found to contain halo %d at a = %g'%(orig_halo_id,scale) 
         print 'These are the trees found: ',[ft[0] for ft in found_tree] 
         print 'I will return the first one'
         found_tree = found_tree[0]
     else:
         found_tree = found_tree[0]
-        print 'Succesfully found halo %d in tree %s at a = %d'%(orig_halo_id,found_tree[0],scale)
+        print 'Succesfully found halo %d in tree %s at a = %g'%(orig_halo_id,found_tree[0],scale)
     #close queues
     in_que.close()
     out_que.close()

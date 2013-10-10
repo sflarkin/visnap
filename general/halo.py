@@ -166,7 +166,7 @@ class new_halo:
         
         # Get needed properties
         halo_id = self.id    
-        scale = self.catalog_attrs['a']
+        scale = round(self.catalog_attrs['a'], 4)
         
             
         # Find tree
