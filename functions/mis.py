@@ -38,7 +38,7 @@ def optimal_resolution(box_size, res_level, Mvir, Rvir, dark_matter_only=True):
 
      res_level - Resolution level, i.e 2^(res_level) = Nparticles^(1/3)
 
-     Mvir - Virial mass of dark matter halo in [Mpc/h]
+     Mvir - Virial mass of dark matter halo in [Msun/h]
 
      Rvir - Virial radius of dark matter halo
 
@@ -46,7 +46,7 @@ def optimal_resolution(box_size, res_level, Mvir, Rvir, dark_matter_only=True):
 
     Output:
     
-     opt_res - optimal resolution in [same units as the given Rvir]   
+     opt_res - optimal resolution in [same units as Rvir]   
     '''
 
     mdark, mgas = particle_mass(box_size, res_level)
@@ -54,8 +54,7 @@ def optimal_resolution(box_size, res_level, Mvir, Rvir, dark_matter_only=True):
         mp = mdark+mgas
     else:
         mp = mdark
-
-    print mp    
+  
     opt_res = 1.6*(Rvir/sqrt(Mvir/mp))
     return opt_res
 

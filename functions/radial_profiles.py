@@ -36,6 +36,20 @@ def rhoBurkert(logr, param):
     rhos,rc = param[0],param[1]
     return log10(rhos/((1+(r/rc)**2)*(1+r/rc)))  
 
+def rhoModBurkert(logr, param):
+    '''Burkert density profile with 2 scale radii, param = (normalization,
+    core_radius, scale_radius'''
+    r = 10**logr
+    rhos, rc, rs = param[0], param[1], param[2]
+    return log10(rhos/((1+(r/rs)**2)*(1+r/rc)))  
+
+def rhoZavala(logr, param):
+    '''Another Burkert like density profile with 2 scale radii, param = (normalization,
+    core_radius, scale_radius'''
+    r = 10**logr
+    rhos, rc, rs = param[0], param[1], param[2]
+    return log10(rhos*rs**3/((r+rc)*(r+rs)**2)  
+
 def MBurkert(logr, param):
     '''Burkert mass profile,  param = (normalization, core_radius)'''
     r = 10**logr
