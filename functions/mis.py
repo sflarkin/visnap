@@ -3,6 +3,7 @@
 from numpy import *
 import visnap
 
+
 def particle_mass(box_size, res_level):
     '''
     Find the particle mass in a simulation
@@ -88,6 +89,86 @@ def find_rpower(r, nenc, avg_dens):
     return r_power, argRes, argNotRes
 
 
+def findEinsteinR_NFW(rhos, rs, Zs, Zd):
+    '''
+    Find the Einstein radius for the given NFW halo
+
+    Input:
+    
+     rhos - NFW Normalization in [Msun/Kpc^3]
+
+     rs - Nfw scale radius in [Kpc]
+
+     Zs - Redshift to lensing source 
+
+     Zd - Redshift to deflector (i.e lens) 
+          
+    Output:
+
+     Einstein radius in [Kpc]
+    '''
+    from scipy.optimize import brentq, fsolve
+    from visnap.functions.radial_profiles import AvgSurfaceDensityNFW
+
+    param = (rhos, rs)
+    SigmaCrit = crit_surf_dens(Zs, Zd) 
+    print 'Finding Einstain radius for NFW halo with rhos = %g and rs = %g' % param
+    print 'Critical Surface Density = ', log10(SigmaCrit)
+    print 'Average Surface Density at rs = ', AvgSurfaceDensityNFW(log10(rs), param),'\n'
+    sol = brentq(lambda R: AvgSurfaceDensityNFW(log10(R), param) - log10(SigmaCrit), 0.00001, 100*rs)                   
+    return sol                
+
+def crit_surf_dens(Zs, Zd):
+    '''
+    Find critical surface mass density 
+
+    Input:
+    
+     Zs - Redshift to lensing source 
+
+     Zd - Redshift to deflector (i.e lens) 
+          
+    Output:
+    
+     Sigma_crit - Critical surface density in [Msun/Kpc^2]
+    '''
+
+    G = visnap.G
+    c = visnap.c
+    Ds = AngDiamDist(Zs)*1000 # Mpc -> Kpc
+    Dd = AngDiamDist(Zd)*1000
+    Dds = AngDiamDist(Zs,Zd)*1000
+    SigmaCrit = c*c*Ds/(4.0*pi*G*Dd*Dds)
+    
+    return SigmaCrit
+
+def AngDiamDist(Z,Zo=0):
+    '''
+    Find the angular diameter distance for the given redshift z
+
+    Input:
+    
+     Z - Redshift of observed object 
+     
+     Zo - Origin redshift (defaults to 0, i.e today)
+
+    Output:
+
+      D - Angular diameter distance in [Mpc]                
+    '''
+    from scipy.integrate import quad                   
+    Om = visnap.omega_matter
+    Ol = visnap.omega_lambda
+    Ho = visnap.h*100.0
+    c  = visnap.c                   
+    a = 1.0/(1.0+Z)
+    ao = 1.0/(1.0+Zo)
+    
+    D = quad(lambda ap: 1/(ap**2*Ho*sqrt(Om/ap**3 + Ol)), a, ao) 
+
+    return c*a*D[0]      
+                       
+
 def straight_line(x, x_cross, y_cross, dx=None, dy=None, slope=1):
     '''
     For the given x return the corresponding y in the straight line
@@ -97,6 +178,7 @@ def straight_line(x, x_cross, y_cross, dx=None, dy=None, slope=1):
 
     if (dx!=None) & (dy!=None): slope = dy/dx
     a = y_cross-slope*x_cross
-    return a + slope*x
+    return a + slope*x                       
+
 
 

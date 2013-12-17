@@ -253,7 +253,7 @@ def calculate_profiles(part_data, hcenter, hvelocity, nbins=15):
 
      dens - number density for that bin 
 
-     avgDens - average number density < rmid (eclosed density)
+     avgDens - average number density inside rmid (eclosed density)
 
      vdisp - total velocity dispersion profile
     '''
@@ -266,12 +266,12 @@ def calculate_profiles(part_data, hcenter, hvelocity, nbins=15):
     r = sqrt(x*x + y*y + z*z) 
     
     radbins = logspace(log10(r[r != 0].min()),log10(r.max()),num=nbins)
-    rmid =  zeros(len(radbins),dtype='float')
-    Ninshell = zeros(len(radbins))
-    Nenclosed = zeros(len(radbins))
-    dens = zeros(len(radbins),dtype='float')     
-    avgDens = zeros(len(radbins),dtype='float')     
-    vdisp = zeros(len(radbins),dtype='float')    
+    rmid =  zeros(len(radbins)-1,dtype='float')
+    Ninshell = zeros(len(radbins)-1)
+    Nenclosed = zeros(len(radbins)-1)
+    dens = zeros(len(radbins)-1,dtype='float')     
+    avgDens = zeros(len(radbins)-1,dtype='float')     
+    vdisp = zeros(len(radbins)-1,dtype='float')    
     
     for i in range(len(radbins)-1):      
         lowr = radbins[i]
@@ -307,5 +307,85 @@ def calculate_profiles(part_data, hcenter, hvelocity, nbins=15):
 
 
 
+def calculate_2dprofiles(part_data, hcenter, hvelocity, projection_axis=(1,0,0), nbins=15):
+    '''
+    Generate radial 2d projection profiles from full particle data
 
+    Input:
+
+     part_data - particle data array [x,y,z,vx,vy,vz]
+
+     hcenter - the halo center
+     
+     hvelocity - the halo bulk velocity
+
+     projection_axis - The direction of the projection axis in a vector form
+                       i.e. (x, y, z)
+     
+     nbins - number of bins in r
+
+    Output:
+
+     Rmid - the mid point R for that R bin
+
+     Ninshell - number of particles in bin
+
+     Nenclosed - number of particles with R<Rmid
+
+     Sdens - number surface density for that bin 
+
+     avgSdens - average number surface density inside Rmid (eclosed number density)
+
+     vlosDisp - Line of sight velocity dispersion profile
+
+     vtanDisp - Tangential velocity dispersion profile
+    '''
+    # ignore divide by zero and invalid operation warnings
+    seterr(divide='ignore', invalid='ignore') 
+
+    part_data,hcenter,hvelocity = part_data.astype(float),hcenter.astype(float),hvelocity.astype(float)
+    r_vec = part_data[:,0:3]-hcenter
+    v_vec = part_data[:,3:6]-hvelocity
+    r_mag = array([sqrt(dot(thisr_vec,thisr_vec)) for thisr_vec in r_vec])
+    v_mag = array([sqrt(dot(thisv_vec,thisv_vec)) for thisv_vec in v_vec])
+
+    eproj = projection_axis/sqrt(dot(projection_axis,projection_axis))  # normalize 
+    r_dot_eproj = array([dot(thisr_vec,eproj) for thisr_vec in r_vec])
+    vlos = array([dot(thisv_vec,eproj) for thisv_vec in v_vec])
+    vtan = sqrt(v_mag*v_mag - vlos*vlos)
+    R = sqrt(r_mag*r_mag - r_dot_eproj*r_dot_eproj)   
+    
+    radbins = logspace(log10(R[R != 0].min()),log10(R.max()),num=nbins)
+    Rmid =  zeros(len(radbins)-1,dtype='float')
+    Ninshell = zeros(len(radbins)-1)
+    Nenclosed = zeros(len(radbins)-1)
+    Sdens = zeros(len(radbins)-1,dtype='float')     
+    avgSdens = zeros(len(radbins)-1,dtype='float')     
+    losVdisp = zeros(len(radbins)-1,dtype='float')    
+    
+    for i in range(len(radbins)-1):      
+        lowR = radbins[i]
+        highR = radbins[i+1]
+        Rmid[i] = (lowR+highR)/2.0
+        inshell =  (R > lowR) & (R < highR)
+        
+        # Differential density 
+        Ninshell[i] = R[inshell].size     
+        area = pi*(highR**2 - lowR**2)       
+        Sdens[i] = Ninshell[i]/area  # This is a number density      
+       
+        # Average (enclosed) density
+        Nenclosed[i] = R[R < Rmid[i]].size
+        avgSdens[i] = Nenclosed[i]/(pi*Rmid[i]**2)
+       
+        # Velocity Dispersion
+        meanVlos = vlos[inshell].mean()
+        meanVlos2 = (vlos[inshell]*vlos[inshell]).mean()
+        vlosDisp = sqrt(meanVlos2 - meanVlos*meanVlos)
+        
+        meanVtan = vtan[inshell].mean()
+        meanVtan2 = (vtan[inshell]*vtan[inshell]).mean()
+        vtanDisp = sqrt(meanVtan2 - meanVtan*meanVtan)
+
+    return Rmid, Ninshell, Nenclosed, Sdens, avgSdens, vlosDisp, vtanDisp
 

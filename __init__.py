@@ -20,6 +20,7 @@ UnitMass_in_g = 1.989e33 # Msun
 #PHYSICS
 
 G = 4.30071e-6 # [Msun^-1 kpc (km/s)^2]
+c = 299792.458 # [km/s]
 
 #COSMOLOGY (WMAP7+BAO+H0, Komatsu et al. 2011) 
 

@@ -30,6 +30,45 @@ def dMNFWdrhos(r, param):
     fact3 = log((r+rs)/rs)
     return fact1*(fact2+fact3)
 
+def SurfaceDensityNFW(logR, param):
+    '''NFW surface density profile, param = (1d density normalization, scale_radius)'''
+    R = 10**logR
+    rhos,rs = param[0],param[1]
+    x = R/rs
+    sigmas = 2*rs*rhos
+    if x < 1:
+        fac1 = sigmas/(x*x - 1.0)
+        fac2 = 1.0-2.0*arctanh(sqrt((1.0-x)/(1.0+x)))/sqrt(1-x*x)
+        sigma = fac1*fac2
+    elif x == 1:
+        sigma = sigmas/3.0
+    else:
+        fac1 = sigmas/(x*x - 1.0)
+        fac2 = 1.0-2.0*arctanh(sqrt((x-1.0)/(1.0+x)))/sqrt(x*x-1)
+        sigma = fac1*fac2
+    return log10(sigma)
+
+def AvgSurfaceDensityNFW(logR, param):
+    '''NFW mean enclosed surface density profile, param = (1d density normalization, scale_radius)'''
+    R = 10**logR
+    rhos,rs = param[0],param[1]
+    x = R/rs
+    sigmas = 4*rs*rhos
+    if x < 1:
+        fac1 = sigmas/(x*x) 
+        fac2 = 2.0*arctanh(sqrt((1.0-x)/(1.0+x)))/sqrt(1-x*x)
+        fac3 = log(x/2.0)
+        sigma = fac1*(fac2+fac3)
+    elif x == 1:
+        sigma = sigmas*(1+log(0.5))
+    else:
+        fac1 = sigmas/(x*x)
+        fac2 = 2.0*arctanh(sqrt((x-1.0)/(1.0+x)))/sqrt(x*x-1)
+        fac3 = log(x/2.0)
+        sigma = fac1*(fac2+fac3)
+        
+    return log10(sigma)    
+
 def rhoBurkert(logr, param):
     '''Burkert density profile,  param = (normalization, core_radius)'''
     r = 10**logr
@@ -48,8 +87,8 @@ def rhoZavala(logr, param):
     core_radius, scale_radius'''
     r = 10**logr
     rhos, rc, rs = param[0], param[1], param[2]
-    return log10(rhos*rs**3/((r+rc)*(r+rs)**2)  
-
+    return log10(rhos*rs**3/((r+rc)*(r+rs)**2))  
+                 
 def MBurkert(logr, param):
     '''Burkert mass profile,  param = (normalization, core_radius)'''
     r = 10**logr

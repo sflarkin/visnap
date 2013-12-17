@@ -1,15 +1,55 @@
-'''Module containing tools that translate simulation file names to simulation properties'''
+'''Module containing tools to deal with IRATE files'''
+from numpy import array
+import h5py
 
-def hyades(filename):
+def snapshot_times(filename):
+    '''
+    Gnearate a list of snapshots found in the given IRATE file and
+    their corresponding redshifts and scale factors/times
+    
+    Input:
+     
+      filename -  A simulation filename following the hyades simulations name
+                  convention
+      
+    Output: 
+    
+      (snapsot_names, redshifts, scales/times) - Numpy arrays
+    '''
+    
+    names, redshifts, scales = [], [], []
+    irate_file = h5py.File(filename)
+    snaps = [irate_file[key] for key in irate_file.keys() if "Snapshot" in key]
+    names = [snap.name for snap in snaps]
+    
+    try:
+        redshifts = [float(snap.attrs['Redshift']) for snap in snaps]
+        scales = [float(snap.attrs['ScaleFactor']) for snap in snaps]
+    except KeyError:
+        redshifts = []
+        scales = []
+        for snap in snaps:
+            catalogs = [snap[key] for key in snap.keys() if "HaloCatalog" in key]
+            catalog = catalogs[0]
+            redshifts.append(float(1.0/catalog.attrs['a'] - 1.0))
+            scales.append(float(catalog.attrs['a']))
+            
+    return (array(names), array(redshifts), array(scales))
+               
+
+def translate_filename_hyades(filename):
     '''
     Exctract simulation parameters from hyades simulations filenames
 
     Input:
-     filename - A simulation filename following the hyades simulations name
-     convention
 
-    Output: 
-     A dictionary containing the following simulation properties.
+     filename - A simulation filename following the hyades simulations name
+                convention
+
+    Output:
+ 
+     A dictionary containing the following simulation properties:
+
       dmName - CDM, SIDM, WDM or DDM
       Lbox - Box size
       Nbox - Number of particles 

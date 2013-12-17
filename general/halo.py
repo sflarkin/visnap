@@ -4,7 +4,7 @@ import sys
 import h5py
 from numpy import *
 import visnap
-import visnap.general.translate_filename as translate_filename
+import visnap.general.irate_file_mod as irate_file_mod
 #import pdb
 
 class new_halo:
@@ -51,7 +51,7 @@ class new_halo:
         self.id = halo_id
                         
         # set simulation properties
-        self.sim_props = translate_filename.hyades(irate_file)
+        self.sim_props = irate_file_mod.translate_filename_hyades(irate_file)
         
         # open snapshot
         irate = h5py.File(irate_file)
@@ -133,8 +133,8 @@ class new_halo:
         print 'Npart = ', self.props['npart']
         if 'AHF' in self.catalog: 
             print 'fMhires = ', self.props['fMhires']
-            print 'com_iffset = ', self.props['com_offset'] 
-            print 'mbp_iffset = ', self.props['mbp_offset']
+            print 'com_offset = ', self.props['com_offset'] 
+            print 'mbp_offset = ', self.props['mbp_offset']
 
 
     def track(self, trees_path='./trees/', trees_file_base='tree', ncpus='all' ):
@@ -223,7 +223,7 @@ class new_halo:
        
      
     def get_profiles(self, particles_file=None, Nbins=50, Ncpus='all',
-                     remove_subs=False): 
+                     remove_subs=False, project_along=None, only2d=False): 
         '''
         Get the radial profiles of this halo and set them up
         as attributes for future use
@@ -243,7 +243,17 @@ class new_halo:
                  set to the number of cores you want to use
          
          remove_subs - If True the particles of the subhalos will be removed
-                       and only the smooth halo distribution will be used         
+                       and only the smooth halo distribution will be used (Only
+                       works for Rockstar catalogs at the moment)
+
+         project_along - If you want 2d projection profiles you can set
+                         project_along to a vector defining the projection axis,
+                         e.g. project_along=(1,0,0) will calculate 2d
+                         projection profiles along the x-axis (Only works for
+                         Rockstar catalogs at the moment)
+
+         only2d - If set to True only 2d projection profiles will be produced  
+              
         '''
         from visnap.functions.mis import find_rpower
 
@@ -263,15 +273,18 @@ class new_halo:
                 profiles[key] = P[key][...][self.cat_arg]
                 if (key == 'dens') or (key == 'ovdens'):
                     profiles[key] *= rhob
+            if project_along!=None:
+                print '2d projection profiles are only supported for Rockstar '\
+                    'catalogs at the moment'
         else:
-            import visnap.general.halo_particles as hp
+            import visnap.general.halo_particles as halo_particles
             print 'Attempting to calculate profiles from Rockstar '\
                 'particle data, this could take some time when '\
                 'done for the first time'
             
             pfile_ext = str(int(self.snapshot.strip('/Snapshot'))) + '.particles'
             particles_file = self.irate_file.replace('irate.hdf5',pfile_ext)
-            pdata = hp.get_rockstar_halo_particles(self.id, particles_file,
+            pdata = halo_particles.get_rockstar_halo_particles(self.id, particles_file,
                                                    snap, Ncpus)
             if remove_subs:
                 asign_id, int_id =  pdata[:,7], pdata[:,8]
@@ -286,40 +299,58 @@ class new_halo:
                 #convert particle positions Mpc/h (comoving) -> Kpc/h (physical)
                 pdata[:,0:3] = pdata[:,0:3].astype(float)*1000.0*C.attrs['a'] 
                 #convert halo position Mpc/h (comoving) -> Kpc/h (physical)
-                halo_center = halo_center*1000.0*C.attrs['a'] 
-            cp = hp.calculate_profiles(pdata[:,0:6], halo_center,
-                                       halo_velocity, Nbins)
-            r_p, Nshell_p, Nenclosed_p, dens_p, avgDens_p, Vdisp_p = cp
+                halo_center = halo_center*1000.0*C.attrs['a']
+           
             mpdm = self.sim_props['mpdm']
-            profiles = {'r': r_p, 'npart_shell': Nshell_p, 'npart': Nenclosed_p,
-                         'M_in_r': Nenclosed_p*mpdm, 'dens': dens_p*mpdm, 
-                         'ovdens': avgDens_p*mpdm, 'sigv': Vdisp_p}
-
-        # set profiles and calculated profiles properties
-        self.profiles = profiles
-        r, npart,= abs(profiles['r']), profiles['npart'] 
-        ovdens, dens = profiles['ovdens'], profiles['dens']
-        #Resolved radii based on Power et al. Relaxation time scale (Eq. 20) 
-        rPower, argRes, argNotRes = find_rpower(r, npart, ovdens)
-        self.profiles_props = {'rPower': rPower, 'argRes': argRes, 
-                              'argNotRes': argNotRes}
-        if self.sim_props['dmName'] == 'SIDM':
-            mpdm, hsi, epsilon = [self.sim_props['mpdm'], self.sim_props['hsi'],
-                                  self.sim_props['epsilon']]
-            arg = argwhere(dens[argRes] > mpdm*(0.2/(hsi*2.8*epsilon))**3)
-            if len(arg) > 0:
-                self.profiles_props['rmax_sidm'] = r[argRes][arg].max()
-            else:
-                self.profiles_props['rmax_sidm'] = 0.0
+            
+            if not only2d:    
+                print 'Calculating profiles from particle data'    
+                cp = halo_particles.calculate_profiles(pdata[:,0:6], halo_center,
+                                           halo_velocity, Nbins)
+                r_p, Nshell_p, Nenclosed_p, dens_p, avgDens_p, Vdisp_p = cp
+                profiles = {'r': r_p, 'npart_shell': Nshell_p, 'npart': Nenclosed_p,
+                            'M_in_r': Nenclosed_p*mpdm, 'dens': dens_p*mpdm, 
+                            'ovdens': avgDens_p*mpdm, 'sigv': Vdisp_p}
+                self.profiles = profiles
+            
+            if project_along!=None:
+                print 'Calculating 2d profiles from particle data'
+                print 'Projection axis = ', project_along
+                cp = halo_particles.calculate_2dprofiles(pdata[:,0:6], halo_center,
+                                            halo_velocity, project_along, Nbins)
+                r_2dp, Nshell_2dp, Nenclosed_2dp, dens_2dp, avgDens_2dp,\
+                    Vlosdisp_2dp, Vtandisp_2dp = cp
+                profiles2d = {'R': r_2dp, 'npart_ring': Nshell_2dp, 'npart': Nenclosed_2dp,
+                              'M_in_R': Nenclosed_2dp*mpdm, 'Sdens': dens_2dp*mpdm, 
+                              'avgSdens': avgDens_2dp*mpdm, 'sigVlos':  Vlosdisp_2dp,
+                              'sigVtan': Vtandisp_2dp}
+                self.profiles2d = profiles2d
+                self.profiles2d_projection_axis = project_along
+            
+        # set calculated profiles properties
+        if not only2d:        
+            r, npart,= abs(profiles['r']), profiles['npart'] 
+            ovdens, dens = profiles['ovdens'], profiles['dens']
+            #Resolved radii based on Power et al. Relaxation time scale (Eq. 20) 
+            rPower, argRes, argNotRes = find_rpower(r, npart, ovdens)
+            self.profiles_props = {'rPower': rPower, 'argRes': argRes, 
+                                   'argNotRes': argNotRes}
+            if self.sim_props['dmName'] == 'SIDM':
+                mpdm, hsi, epsilon = [self.sim_props['mpdm'], self.sim_props['hsi'],
+                                      self.sim_props['epsilon']]
+                arg = argwhere(dens[argRes] > mpdm*(0.2/(hsi*2.8*epsilon))**3)
+                if len(arg) > 0:
+                    self.profiles_props['rmax_sidm'] = r[argRes][arg].max()
+                else:
+                    self.profiles_props['rmax_sidm'] = 0.0
             
         # Close the irate file
         irate.close()
 
-
     def plot_density(self):
         '''Plot density profile'''
-        import visnap.plot.halo_profiles as hp
-        hp.density_profile(self)
+        import visnap.plot.halo_profiles as halo_profiles
+        halo_profiles.density_profile(self)
 
 
         
