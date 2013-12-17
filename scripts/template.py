@@ -62,20 +62,43 @@ print ''
 
 #Do whatever you want below
 
-#example
+# example
+from pylab import *
 import visnap.general.irate_file_mod as irate_file_mod
 import visnap.general.find_halos as find_halos
 import visnap.plot.halo_profiles as plot_profiles
+import visnap.plot.subhalos as plot_subhalos
 
+# get list of halo objects: 1 per file (the halo with the most number of
+# particles at z =0)
 halos = []
 for irate_file in irate_files:
-    simprops = irate_file_mod.translate_filename_hyades(irate_file)
-    zoom_id = simprops['zoom_id']
-    zoom_halo, dist = find_halos.find_zoom_halo('650Box_clusters_zooms.txt', zoom_id,
-                                                irate_file, 'Snapshot00148', 'Rockstar')
-    halos.append(zoom_halo)
-    
-fig, ax, lines, legends = plot_profiles.density_profiles(halos)
- 
+    snap_names, redshifts, scales  = irate_file_mod.snapshot_times(irate_file)
+    z0snap = snap_names[scales == 1][0]
+    mostpart_halo = find_halos.find_mostpart_halo(irate_file, z0snap, 'Rockstar') #For Rockstar catalogs
+    #mostpart_halo = find_halos.find_mostpart_halo(irate_file, z0snap, 'AHF')#For AHF catalogs
+    halos.append(mostpart_halo)
 
+# Plot density profiles    
+fig, ax, lines, legends = plot_profiles.density_profiles(halos, showme=0)
+# Change what you like different, e.g. :
+#ax.set_xlim()
+#ax.set_ylim()
+#legend = ax.legend(lines,legendNames,loc=1,prop=dict(size=0.7*25,),labelspacing = 0.1)
+#legend.draw_frame(False)
+#ax.set_yticks([1])
+#ax.set_yticklabels([r'$1$', ...],size=25)
+#ax.set_xticks([1])
+#ax.set_xticklabels([r'$1$', ...],size=25)
+show() 
+
+# Plot circular velocities
+fig, ax, lines, legends = plot_profiles.circular_velocities(halos, showme=0)
+# Change what you like different
+show()
+
+# Plot subhalo vmax function
+fig, ax, lines, legends = plot_subhalos.subhalo_functions(halos, showme=0)
+# Change what you like different
+show()
 
