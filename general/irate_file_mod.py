@@ -103,6 +103,7 @@ def translate_filename_hyades(filename):
         if nameSplit[1] == 'Z11':  Lbox, Nbox, mpdm = '50', '2048',1.07e6
         if nameSplit[1] == 'Z12':  Lbox, Nbox, mpdm = '50', '4096',1.34e5 
         if nameSplit[1] == 'X11':  Lbox, Nbox, mpdm = '5', '2048', 1074.0
+        if nameSplit[1] == 'X10':  Lbox, Nbox, mpdm = '5', '2048', 8594.0
         if dmName == 'WDM': 
             wdmMass = nameSplit[4]
         else:
