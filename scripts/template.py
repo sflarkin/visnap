@@ -74,7 +74,7 @@ import visnap.plot.subhalos as plot_subhalos
 halos = []
 for irate_file in irate_files:
     snap_names, redshifts, scales  = irate_file_mod.snapshot_times(irate_file)
-    z0snap = snap_names[scales == 1][0]
+    z0snap = snap_names[scales > 0.99999][0]
     mostpart_halo = find_halos.find_mostpart_halo(irate_file, z0snap, 'Rockstar') #For Rockstar catalogs
     #mostpart_halo = find_halos.find_mostpart_halo(irate_file, z0snap, 'AHF')#For AHF catalogs
     halos.append(mostpart_halo)

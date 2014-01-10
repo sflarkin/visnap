@@ -113,8 +113,8 @@ def findEinsteinR_NFW(rhos, rs, Zs, Zd):
     param = (rhos, rs)
     SigmaCrit = crit_surf_dens(Zs, Zd) 
     print 'Finding Einstain radius for NFW halo with rhos = %g and rs = %g' % param
-    print 'Critical Surface Density = ', log10(SigmaCrit)
-    print 'Average Surface Density at rs = ', AvgSurfaceDensityNFW(log10(rs), param),'\n'
+    print 'Critical Surface Density [Msun/Kpc^2] = ', SigmaCrit
+    print 'Average Surface Density at rs [Msun/Kpc^2] = ', 10**AvgSurfaceDensityNFW(log10(rs), param)
     sol = brentq(lambda R: AvgSurfaceDensityNFW(log10(R), param) - log10(SigmaCrit), 0.00001, 100*rs)                   
     return sol                
 
