@@ -70,11 +70,20 @@ class new_halo:
         # Get particle data
         Mass = Dark_Halo['Mass'][...]
         Pos = Dark_Halo['Position'][...]
-        Pot = Dark_Halo['Potential'][...]
+        try:
+            Pot = Dark_Halo['Potential'][...]
+            pot_flag = 1
+        except KeyError:
+            print 'Warning: There is no field for the potential of the '\
+                'particles, the center of the halo will be set as (0, 0, 0) '\
+                'which may not be accurate'
+            
         Vel = Dark_Halo['Velocity'][...]
                
         # Find center and bulk velocity
-        halo_center = Pos[argwhere(Pot == Pot.min())[0,0]]
+        if pot_flag:
+            halo_center = Pos[argwhere(Pot == Pot.min())[0,0]]
+        else: halo_center = array([0, 0, 0])    
         halo_velocity = array([Vel[:,0].mean(), Vel[:,1].mean(),
                                Vel[:,2].mean()]) 
         self.props = {'Center': halo_center, 'Velocity': halo_velocity,
