@@ -153,8 +153,13 @@ def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1
     for tline in ax.yaxis.get_minorticklines(): tline.set_markeredgewidth(2)
     
     if figname: savefig(figname)
-    if showme: show()
-
+    if showme:
+        try:
+            show()
+        except RuntimeError:
+            rc('text', usetex=False)
+            show()
+        
     return fig, ax, line[0], legendname[0]
 
 
@@ -259,7 +264,12 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
     for tline in ax.yaxis.get_minorticklines(): tline.set_markeredgewidth(2)
     
     if figname: savefig(figname)
-    if showme: show()
+    if showme:
+        try:
+            show()
+        except RuntimeError:
+            rc('text', usetex=False)
+            show()
 
     return fig, ax, lines, legendnames
 
@@ -408,7 +418,12 @@ def circular_velocity(halo_object, axes=None, figname='halo_circular_velocity', 
     for tline in ax.yaxis.get_minorticklines(): tline.set_markeredgewidth(2)
     
     if figname: savefig(figname)
-    if showme: show()
+    if showme:
+        try:
+            show()
+        except RuntimeError:
+            rc('text', usetex=False)
+            show()
 
     return fig, ax, line[0], legendname[0]
 
@@ -514,6 +529,11 @@ def circular_velocities(halo_objects, axes=None, figname='halos_circular_velocit
     for tline in ax.yaxis.get_minorticklines(): tline.set_markeredgewidth(2)
     
     if figname: savefig(figname)
-    if showme: show()
+    if showme:
+        try:
+            show()
+        except RuntimeError:
+            rc('text', usetex=False)
+            show()
 
     return fig, ax, lines, legendnames
