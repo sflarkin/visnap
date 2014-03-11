@@ -10,7 +10,7 @@ from visnap.functions.mis import find_rpower
 #import pdb
 
 
-def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1,
+def density_profile(halo_object, rmin=None, axes=None, figname='halo_density', fignumber=-1,
                     marker=None, markersize=None, color=None, fontsize=25,
                     showme=1, legendname=None): 
                     
@@ -21,6 +21,8 @@ def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1
     
      halo_object - A halo object as returned by visnap.general.halo.new_halo()
 
+     rmin - Minimum radius to plot, if None Rpower (the resolution limit) is used 
+
      axes - If None a new figure and axes will be created, else a new line
             will be added to the given axes.
 
@@ -30,7 +32,7 @@ def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1
                
      fignumber - If the axes are not given a new figure will be creted with
                  this number, if set to -1 it will be given automatically by
-                 matplotlib.figure()  
+                 matplotlib.figure()              
      
      marker
      markersize
@@ -76,10 +78,13 @@ def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1
         halo.profiles
     except AttributeError:
         halo.get_profiles()
-    
-    rmin = halo.profiles_props['rPower']
-    print 'rPower: ', rmin 
-    
+
+    if rmin:
+        print 'rmin: ', rmin
+    else:
+        rmin = halo.profiles_props['rPower']
+        print 'rmin = rPower: ', rmin
+        
     # Plot
     h = visnap.h
     r, dens = abs(halo.profiles['r']), halo.profiles['dens']
@@ -158,7 +163,7 @@ def density_profile(halo_object, axes=None, figname='halo_density', fignumber=-1
     return fig, ax, line[0], legendname[0]
 
 
-def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=-1,
+def density_profiles(halo_objects, rmin=None, axes=None, figname='halos_density',fignumber=-1,
                      markers=None, markerssize=None, colors=None, linewidths=None,
                      fontsize=25, showme=1, legendnames=None):
     '''
@@ -167,6 +172,8 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
     Input:
 
      halo_objects - A list of halo objects created by visnap.general.halo.new_halo()
+
+     rmin - Minimum radius to plot, if None Rpower (the resolution limit) is used
 
      axes - If None a new figure and axes will be created, else new lines
             will be added to the given axes.
@@ -237,7 +244,7 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
                 color = color_list[hcount]
 
         thisfig, thisax, thisline, thislegend =\
-            density_profile(halo, ax, marker=markers[hcount],
+                 density_profile(halo, rmin, ax, marker=markers[hcount],
                             markersize=markerssize[hcount], 
                             color=color, fontsize=fontsize,
                             figname=None, showme=0)      
@@ -264,9 +271,10 @@ def density_profiles(halo_objects, axes=None, figname='halos_density',fignumber=
     return fig, ax, lines, legendnames
 
 
-def circular_velocity(halo_object, axes=None, figname='halo_circular_velocity', fignumber=-1,
-                    marker=None, markersize=None, color=None, fontsize=25,
-                    showme=1, legendname=None): 
+def circular_velocity(halo_object, rmin=None,
+                      axes=None, figname='halo_circular_velocity', fignumber=-1,
+                      marker=None, markersize=None, color=None, fontsize=25,
+                      showme=1, legendname=None): 
                     
     '''
     Plot the circular velocity profile of the given halo
@@ -274,6 +282,8 @@ def circular_velocity(halo_object, axes=None, figname='halo_circular_velocity', 
     Input
     
      halo_object - A halo object as returned by visnap.general.halo.new_halo()
+
+     rmin - Minimum radius to plot, if None Rpower (the resolution limit) is used
 
      axes - If None a new figure and axes will be created, else a new line
             will be added to the given axes.
@@ -331,9 +341,12 @@ def circular_velocity(halo_object, axes=None, figname='halo_circular_velocity', 
     except AttributeError:
         halo.get_profiles()
     
-    rmin = halo.profiles_props['rPower']
-    print 'rPower: ', rmin 
-    
+    if rmin:
+        print 'rmin: ', rmin    
+    else:
+        rmin = halo.profiles_props['rPower']
+        print 'rmin = rPower: ', rmin
+        
     # Plot
     h = visnap.h
     G = visnap.G
@@ -413,7 +426,8 @@ def circular_velocity(halo_object, axes=None, figname='halo_circular_velocity', 
     return fig, ax, line[0], legendname[0]
 
 
-def circular_velocities(halo_objects, axes=None, figname='halos_circular_velocity',fignumber=-1,
+def circular_velocities(halo_objects, rmin=None,
+                        axes=None, figname='halos_circular_velocity',fignumber=-1,
                         markers=None, markerssize=None, colors=None, linewidths=None,
                         fontsize=25, showme=1, legendnames=None):
     '''
@@ -422,6 +436,8 @@ def circular_velocities(halo_objects, axes=None, figname='halos_circular_velocit
     Input:
 
      halo_objects - A list of halo objects created by visnap.general.halo.new_halo()
+
+     rmin - Minimum radius to plot, if None Rpower (the resolution limit) is used
 
      axes - If None a new figure and axes will be created, else new lines
             will be added to the given axes.
@@ -492,7 +508,7 @@ def circular_velocities(halo_objects, axes=None, figname='halos_circular_velocit
                 color = color_list[hcount]
 
         thisfig, thisax, thisline, thislegend =\
-            circular_velocity(halo, ax, marker=markers[hcount],
+            circular_velocity(halo, rmin, ax, marker=markers[hcount],
                               markersize=markerssize[hcount], 
                               color=color, fontsize=fontsize,
                               figname=None, showme=0)      
