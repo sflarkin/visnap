@@ -10,7 +10,7 @@ import visnap
 class new_halo:
     '''Create a new halo object'''
 
-    def __init__(self, irate_file, snapshot, halo_id=None):
+    def __init__(self, irate_file, snapshot, halo_id=None, center='pot'):
         '''
         Initialize new halo object with basic attributes and properties
 
@@ -23,7 +23,11 @@ class new_halo:
                     with the snapshot number
                     
          halo_id - The ID given to this halo, Can be an integer or a string. If
-                   None it will set as "<snapshot_name>_halo1"            
+                   None it will set as "<snapshot_name>_halo1"
+
+         center - Either 'mean' to use the mean of the particle positions as the
+                  the center of the halo, or 'pot' for the minimum of the potential.
+                  Also you can set it as (x, y, z) or [x, y, z].
         '''           
 
         # set some given attributes
@@ -72,18 +76,22 @@ class new_halo:
         Pos = Dark_Halo['Position'][...]
         try:
             Pot = Dark_Halo['Potential'][...]
-            pot_flag = 1
         except KeyError:
+            center = 'mean'
             print 'Warning: There is no field for the potential of the '\
-                'particles, the center of the halo will be set as (0, 0, 0) '\
-                'which may not be accurate'
+                'particles, the center of the halo will be set as the mean '\
+                'of the particle positions.'
             
         Vel = Dark_Halo['Velocity'][...]
                
         # Find center and bulk velocity
-        if pot_flag:
+        if center='pot':
             halo_center = Pos[argwhere(Pot == Pot.min())[0,0]]
-        else: halo_center = array([0, 0, 0])    
+        elif center='mean':
+            halo_center = array([mean(Pos[:,0]), mean(Pos[:,1]), mean(Pos[:,2])])
+        else:
+            halo_center = array(center)
+            
         halo_velocity = array([Vel[:,0].mean(), Vel[:,1].mean(),
                                Vel[:,2].mean()]) 
         self.props = {'Center': halo_center, 'Velocity': halo_velocity,
