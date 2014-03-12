@@ -19,7 +19,8 @@ class new_halo:
 
         snapshot - The snapshot from which the catalog was generated.
                    Can be a string with the h5py key or an integer
-                   with the snapshot number
+                   with the snapshot number. If snapshot=None then the
+                   file will be treated as an old IRATE.
 
         catalog - The AHF or Rockstar catalog. Can be a string with 
                   the h5py key or simply 'AHF'/'Rockstar', if given as
@@ -28,7 +29,7 @@ class new_halo:
 
         halo_id - The halo ID in the catalog, for Rockstar catalogs 
                   this alone identifies the halo. For AHF catalogs
-                  ID's are not unique across MPI tasks and the 
+                  IDs are not unique across MPI tasks and the 
                   halo_arg parameter may be necesary to identify
                   the desired halo
 
@@ -54,21 +55,24 @@ class new_halo:
         self.sim_props = irate_file_mod.translate_filename_hyades(irate_file)
         
         # open snapshot
-        irate = h5py.File(irate_file)
-        snap = irate[snapshot]   
-        
-        # open catalog
-        if (catalog == 'AHF') or (catalog == 'Rockstar'):
-             for key in snap.keys():
-                 if catalog in key:
-                     C = snap[key]
-                     catalog = key
-                     break
-                 if key == snap.keys()[-1]:
-                     errmsg = 'No %s catalog found' % catalog
-                     raise ValueError(errmsg)
-        else: 
-            C = snap[catalog]    
+        irate = h5py.File(irate_file,'r')
+        if snapshot:
+            snap = irate[snapshot]   
+            # open catalog
+            if (catalog == 'AHF') or (catalog == 'Rockstar'):
+                for key in snap.keys():
+                    if catalog in key:
+                        C = snap[key]
+                        catalog = key
+                        break
+                    if key == snap.keys()[-1]:
+                        errmsg = 'No %s catalog found' % catalog
+                        raise ValueError(errmsg)
+            else: 
+                C = snap[catalog]    
+        else:
+            C = irate[catalog]
+            
         self.catalog = catalog
         self.catalog_attrs = {}
         # pass catalog attributes
@@ -105,7 +109,7 @@ class new_halo:
         self.props = {}
         self.units = {}
         for key in C.keys():
-            if 'RadialProfiles' not in key:                                
+            if ('RadialProfiles' not in key) and ('ParticleData' not in key):
                 self.props[key] = C[key][...][arg]
                 try: unitname = C[key].attrs['unitname']
                 except KeyError: unitname = None
@@ -258,7 +262,7 @@ class new_halo:
         from visnap.functions.mis import find_rpower
 
         # open snapshot
-        irate = h5py.File(self.irate_file)
+        irate = h5py.File(self.irate_file,'r')
         snap = irate[self.snapshot]
 
         # open catalog

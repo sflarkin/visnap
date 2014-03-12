@@ -63,7 +63,7 @@ class new_halo:
         import visnap.general.halo_particles as hp
 
         # Open snapshot
-        irate = h5py.File(self.irate_file)
+        irate = h5py.File(self.irate_file,'r')
         snap = irate[self.snapshot]
         Dark_Halo = snap['ParticleData']['Dark_Halo']
         

@@ -32,12 +32,12 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
                 with the snapshot number          
 
      catalog - The AHF or Rockstar catalog. Can be a string with 
-               the h5py key or simply 'AHF'/'Rockstar', if given as
-               the later the first AHF/Rockstar catalog found will
+               the h5py key or simply "AHF"/"Rockstar", if given as
+               the later the first "AHF"/"Rockstar" catalog found will
                be used
 
-     prop - property to use for the matching, can be 'Mvir' (default), 'Vmax',
-            'Rvir', 'Vel', 'Spin' or 'all'
+     prop - property to use for the matching, can be "Mvir" (default), "Vmax",
+            "Rvir", "Vel", "Spin" or "all"
      
      N_mostparticles - Number of halos in the initial selection of halos with
                        the most number of particles
@@ -57,7 +57,7 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
     hid_l, Vx_l, Vy_l, Vz_l, Rvir_l, Mvir_l, Vmax_l, Spin_l = zoom_list[arg]
 
     # open snapshot
-    irate = h5py.File(irate_file)
+    irate = h5py.File(irate_file,'r')
     if type(snapshot) == int: snapshot = 'Snapshot%.5d' % snapshot
     snap = irate[snapshot]   
     
@@ -147,9 +147,9 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
     return halo_object, dist.min()
 
 
-def find_mostpart_halo(irate_file, snapshot, catalog):
+def find_mostpart_halo(irate_file, snapshot, catalog, nhalos=1):
     '''
-    Find halo with the most number of particles
+    Find the halos with the largest number of particles
  
     Input:
   
@@ -157,48 +157,60 @@ def find_mostpart_halo(irate_file, snapshot, catalog):
 
      snapshot - The snapshot from which the catalog was generated.
                 Can be a string with the h5py key or an integer
-                with the snapshot number          
+                with the snapshot number. If snapshot=None then the
+                file will be treated as an old IRATE.
 
      catalog - The AHF or Rockstar catalog. Can be a string with 
-               the h5py key or simply 'AHF'/'Rockstar', if given as
+               the h5py key or simply "AHF"/"Rockstar", if given as
                the later the first AHF/Rockstar catalog found will
                be used
 
+     nhalos - If nhalos > 1 will return a list with the nhalos 
+              that have the largest number of particles
+
     Output:
 
-     halo_object - The halo object of the found halo as created by
-                   visnap.halo.new_halo() 
+     halo_objects - If nhalos > 1: A list of halo objects as created by
+                    visnap.halo.new_halo(). Else: A single halo object. 
     ''' 
 
     # open snapshot
-    irate = h5py.File(irate_file)
-    if type(snapshot) == int: snapshot = 'Snapshot%.5d' % snapshot
-    snap = irate[snapshot]   
-    
-    # open catalog
-    C = catalog
-    if (catalog == 'AHF') or (catalog == 'Rockstar'):
-        for key in snap.keys():
-            if catalog in key:
-                C = snap[key]
-                catalog = key
-                break
-            if key == snap.keys()[-1]:
-                errmsg = 'No %s catalog found' % catalog
-                raise ValueError(errmsg)
-    else: 
-        C = snap[catalog]
+    irate = h5py.File(irate_file,'r')
+    if snapshot:
+        if type(snapshot) == int: snapshot = 'Snapshot%.5d' % snapshot
+        snap = irate[snapshot]
+        # open catalog
+        if (catalog == 'AHF') or (catalog == 'Rockstar'):
+            for key in snap.keys():
+                if catalog in key:
+                    C = snap[key]
+                    catalog = key
+                    break
+                if key == snap.keys()[-1]:
+                    errmsg = 'No %s catalog found' % catalog
+                    raise ValueError(errmsg)
+        else: 
+            C = snap[catalog]
+    else:
+        C = irate[catalog]
 
-    # Find halo with most number of particles    
+    # Find halos with the largest number of particles    
     npart = C['npart'][...]
-    halo_arg = argwhere(npart == npart.max())[0,0]
-    
-    # Create halo_object    
-    halo_object = halo.new_halo(irate_file, snapshot, catalog,
-                                halo_arg=halo_arg)
+    halo_args = npart.argsort()[-nhalos:][::-1]
+
+    halos = []
+    # Create halo_objects
+    for arg in halo_args:
+        thishalo = halo.new_halo(irate_file, snapshot, catalog,
+                                 halo_arg=arg)
+        halos.append(thishalo)
+        
     # Done
     irate.close()
-    return halo_object
+    if len(halos)==1:
+        return halos[0]
+    else:
+        return halos
 
 
 def find_subhalos(halo_object, vcut_factor=0.05, rcut_factor=1.0, min_npart=100):
@@ -223,7 +235,7 @@ def find_subhalos(halo_object, vcut_factor=0.05, rcut_factor=1.0, min_npart=100)
 
     # open snapshot
     host = halo_object
-    irate = h5py.File(host.irate_file)
+    irate = h5py.File(host.irate_file,'r')
     snap = irate[host.snapshot]
 
     # open catalog

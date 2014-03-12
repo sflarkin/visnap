@@ -67,7 +67,7 @@ def find_tree(orig_halo_id, scale, trees_path, trees_file_base='tree',
         Kernel function to be run in multiple processes
         '''
         thisjob = current_process()
-        f = h5py.File(trees_path+trees_file_base+'.hdf5')
+        f = h5py.File(trees_path+trees_file_base+'.hdf5','r')
         trees = f['RockstarMergerTrees']
         for keys in iter(in_que.get,'STOP'):
             if out_que.qsize():
@@ -94,7 +94,7 @@ def find_tree(orig_halo_id, scale, trees_path, trees_file_base='tree',
         jobs.append(job)
 
     # fill up the in_que with chunks of trees, we actually pass only the tree names.  
-    f = h5py.File(trees_path+trees_file_base+'.hdf5')
+    f = h5py.File(trees_path+trees_file_base+'.hdf5','r')
     trees = f['RockstarMergerTrees']
     Ntrees = len(trees)    
     trees_chunk = []
@@ -163,7 +163,7 @@ def halo_track(tree_name, halo_depth_first_ID, trees_path,
                        with the same key names. 
     '''
    
-    f = h5py.File(trees_path+trees_file_base+'.hdf5')
+    f = h5py.File(trees_path+trees_file_base+'.hdf5','r')
     trees = f['RockstarMergerTrees']
     tree = trees[tree_name]
 

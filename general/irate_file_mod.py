@@ -18,7 +18,7 @@ def snapshot_times(filename):
     '''
     
     names, redshifts, scales = [], [], []
-    irate_file = h5py.File(filename)
+    irate_file = h5py.File(filename,'r')
     snaps = [irate_file[key] for key in irate_file.keys() if "Snapshot" in key]
     names = [snap.name for snap in snaps]
     
