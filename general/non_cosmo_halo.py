@@ -38,7 +38,7 @@ class new_halo:
         else: self.id = snapshot+'\_halo1'      
         
         # get profiles and profile derived quantities
-        self.get_profiles()
+        self.get_profiles(center=center)
 
     def print_properties(self):
         '''Print some properties of this halo'''
@@ -51,8 +51,7 @@ class new_halo:
         print 'Npart = ', self.props['npart']
         
 
-    def get_profiles(self, Nbins=50, fit_model=None,
-                     log_fit=True):  
+    def get_profiles(self, Nbins=50, center='pot'):  
         '''
         Get the radial profiles of this halo and set them up
         as attributes for future use
@@ -60,6 +59,10 @@ class new_halo:
         Input:
       
          Nbins - Number of bins to use when calculating profiles
+
+         center - Either 'mean' to use the mean of the particle positions as the
+                  the center of the halo, or 'pot' for the minimum of the potential.
+                  Also you can set it as (x, y, z) or [x, y, z].
                  
         '''
 
@@ -85,9 +88,9 @@ class new_halo:
         Vel = Dark_Halo['Velocity'][...]
                
         # Find center and bulk velocity
-        if center='pot':
+        if center=='pot':
             halo_center = Pos[argwhere(Pot == Pot.min())[0,0]]
-        elif center='mean':
+        elif center=='mean':
             halo_center = array([mean(Pos[:,0]), mean(Pos[:,1]), mean(Pos[:,2])])
         else:
             halo_center = array(center)
