@@ -30,7 +30,7 @@ def find_tree(orig_halo_id, scale, trees_path, trees_file_base='tree',
     Output:
 
      found_tree - The h5py key name of the found tree. Will be empty if a tree
-                  wasn't found
+                  was not found
 
      depth_first_id - Depth first ID of the halo found in the tree 
 

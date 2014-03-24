@@ -38,7 +38,7 @@ def cat_and_gen_irate(simdirs, catalog_type, cat_snap_string, snap_num, path=Non
         simname = thisdir.rpartition('/')[-1]
         if catalog_type == 'ahf':
             print '\ncatting AHF_ files for '+simname+' snapshot '+cat_snap_string
-            catdir = path+thisdir+ahf_catalogs_path
+            catdir = path+thisdir+'/'+ahf_catalogs_path+'/'
             os.system("cat "+catdir+"*."+cat_snap_string+".*.AHF_halos > "+catdir+"../"+simname+"."+cat_snap_string+".AHF_halos")
             os.system("cat "+catdir+"*."+cat_snap_string+".*.AHF_profiles > "+catdir+"../"+simname+"."+cat_snap_string+".AHF_profiles")
             os.system("cat "+catdir+"*."+cat_snap_string+".*.AHF_particles > "+catdir+"../"+simname+"."+cat_snap_string+".AHF_particles")
@@ -46,7 +46,7 @@ def cat_and_gen_irate(simdirs, catalog_type, cat_snap_string, snap_num, path=Non
             call(["ahf2irate","--profiles","--paramfile="+catdir+simname+".parameter",catdir+"../"+simname+"."+cat_snap_string+".AHF_",catdir+"../"+simname+"_AHF_irate.hdf5",snap_num])
         else:
             print '\ncatting rockstar halos_ files for '+simname+' snapshot '+cat_snap_string
-            catdir = path+thisdir+rock_catalogs_path
+            catdir = path+thisdir+'/'+rock_catalogs_path+'/'
             os.system("cat "+catdir+"halos_"+cat_snap_string+".*.ascii > "+catdir+"../"+simname+"_"+cat_snap_string+".ascii")
             os.system("cat "+catdir+"halos_"+cat_snap_string+".*.particles > "+catdir+"../"+simname+"_"+cat_snap_string+".particles")  
             print 'generating IRATE file '+simname+'_rockstar_irate.hdf5'+' with rockstar catalogs'
@@ -64,7 +64,7 @@ if __name__=="__main__":
                       help="Type of catalogs: ahf or rockstar. (default = rockstar) ")
     parser.add_option("-p", "--path", dest="path",
                       default="", 
-                      help="Path to IRATE files (default = )")
+                      help="Path to sim directories (default = )")
     parser.add_option("-s", "--snap_string", dest="snap_string",
                       default="",
                       help="Snapshot string, the catalogs will be searched as *.cat_snap_string.*.AHF_halos for AHF and halos_cat_snap_string.*.ascii for Rockstar")

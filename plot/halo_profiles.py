@@ -612,10 +612,10 @@ def vdisp_profile(halo_object, axes=None, figname='halo_vdisp', fignumber=-1,
     dmName = simprops['dmName']
     if dmName == 'nonCosmo':
         x = r[argwhere(r > rmin)]
-        y = sigv[argwhere(r > rmin)]/10.0**9
+        y = sigv[argwhere(r > rmin)]
     else:    
         x = r[argwhere(r > rmin)]/h
-        y = sigv[argwhere(r > rmin)]*h**2/10.0**9
+        y = sigv[argwhere(r > rmin)]
 
     mpdmS = '%.1e' %  simprops['mpdm']
     mpdmS = mpdmS.split('+')
