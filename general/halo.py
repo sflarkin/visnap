@@ -5,7 +5,7 @@ import h5py
 from numpy import *
 import visnap
 import visnap.general.irate_file_mod as irate_file_mod
-#import pdb
+import pdb
 
 class new_halo:
     '''Create a new halo object'''
@@ -262,22 +262,31 @@ class new_halo:
         from visnap.functions.mis import find_rpower
 
         # open snapshot
-        irate = h5py.File(self.irate_file,'r')
-        snap = irate[self.snapshot]
-
-        # open catalog
-        C = snap[self.catalog]
-        
+        irate = h5py.File(self.irate_file)
+        if self.snapshot:
+            snap = irate[self.snapshot]
+            # open catalog
+            C = snap[self.catalog]
+        else:
+            C = irate[self.catalog]
+          
         # get profiles
         profiles = {}
-        if 'AHF' in self.catalog:
+        if ('AHF' in self.catalog) or (not self.snapshot):
             P = C['RadialProfiles']
-            rhob = C.attrs['rho_back(z)']/10**9 # [Msun/kpc^3 h^2]
+            try:
+                rhob = C.attrs['rho_back(z)']/10**9 # [Msun/kpc^3 h^2]
+            except KeyError:
+                ahf_head = irate['CatalogHeader']['AHFHeader']
+                rhob = float(ahf_head.attrs['rho_back(z)'])/10**9
+                
             for key in P.keys():
                 profiles[key] = P[key][...][self.cat_arg]
                 if (key == 'dens') or (key == 'ovdens'):
                     profiles[key] *= rhob
-            if project_along!=None:
+            self.profiles = profiles        
+                    
+            if project_along != None:
                 print '2d projection profiles are only supported for Rockstar '\
                     'catalogs at the moment'
         else:

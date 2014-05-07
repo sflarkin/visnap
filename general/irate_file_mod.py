@@ -9,8 +9,7 @@ def snapshot_times(filename):
     
     Input:
      
-      filename -  A simulation filename following the hyades simulations name
-                  convention
+      filename -  Name of the IRATE file
       
     Output: 
     
@@ -33,7 +32,8 @@ def snapshot_times(filename):
             catalog = catalogs[0]
             redshifts.append(float(1.0/catalog.attrs['a'] - 1.0))
             scales.append(float(catalog.attrs['a']))
-            
+
+    irate_file.close()        
     return (array(names), array(redshifts), array(scales))
                
 

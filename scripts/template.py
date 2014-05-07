@@ -25,7 +25,7 @@ parser.add_option("-b", "--base", dest="base",
                   default="", 
                   help="Base of IRATE files (default = '')")
 parser.add_option("-e", "--extension", dest="ext",
-                  default="_irate.hdf5", 
+                  default="irate.hdf5", 
                   help="Extension of IRATE files (default = _irate.hdf5)")
 parser.add_option("-p", "--path", dest="path",
                   default="catalogs/", 

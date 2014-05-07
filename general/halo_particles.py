@@ -4,6 +4,7 @@ a halo, and to calculate stuff from the full particle information.
 '''
 
 import time
+import sys
 from numpy import *
 from multiprocessing import Process, Queue, cpu_count
 from visnap.general.rockstar import read_rockstar_header
