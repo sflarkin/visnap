@@ -118,6 +118,8 @@ class new_halo:
                 self.units[key] = {'unitname': unitname, 'unitcgs': unitcgs}
                 if key == 'ID':
                     self.id = C[key][...][arg]
+                    
+        if not self.id: self.id = arg            
 
         # Close the irate file
         irate.close()        

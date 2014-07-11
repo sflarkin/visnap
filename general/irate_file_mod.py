@@ -64,8 +64,8 @@ def translate_filename_hyades(filename):
     '''
     name = filename.split('/')[-1]
     nameSplit = name.split('_')
-    if nameSplit[0] == 'GID':  dmName = 'SIDM'
-    if nameSplit[0] == 'GVD':  dmName = 'CDM'
+    if nameSplit[0] == 'GID' or  nameSplit[0] == 'GIDB':  dmName = 'SIDM'
+    if nameSplit[0] == 'GVD' or  nameSplit[0] == 'GVB':  dmName = 'CDM'
     if nameSplit[0] == 'GWD':  dmName = 'WDM'
     if nameSplit[0] == 'GDD':  dmName = 'DDM'
     if nameSplit[1].isdigit():
