@@ -40,6 +40,8 @@ def read_trees(fname):
             colheads = colheads.split()
             for i in range(len(colheads)):
                 colheads[i] = colheads[i].rstrip('(0123456789)')
+                if '(' in colheads[i]: colheads[i] = colheads[i]+')'
+                if '/' in colheads[i]: colheads[i] = colheads[i].replace('/','_over_')
         elif line.startswith('#tree'):
             startedtrees = True
             treenums.append(int(line.split()[-1]))
@@ -106,8 +108,6 @@ def save_to_hdf5(outname,colheads,trees,treenums,comments):
     for i in range(len(treenums)):
         tre = t.create_group('Tree_{0}'.format(treenums[i]))
         for j in range(len(colheads)):
-            if '/' in colheads[j]:
-                colheads[j] = colheads[j].replace('/','_over_')
             tre.create_dataset(colheads[j],data=trees[i][j])
     f.close()
 
