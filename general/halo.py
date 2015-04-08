@@ -52,8 +52,12 @@ class new_halo:
         self.id = halo_id
                         
         # set simulation properties
-        self.sim_props = irate_file_mod.translate_filename_hyades(irate_file)
-        
+        try:
+            self.sim_props = irate_file_mod.translate_filename_hyades(irate_file)
+        except:
+            print 'WARNING: Could not extract simulation properties from filename. '
+            'There will be not .sim_props attribute for this halo object'
+            
         # open snapshot
         irate = h5py.File(irate_file,'r')
         if snapshot:
@@ -127,13 +131,12 @@ class new_halo:
 
     def print_properties(self):
         '''Print some properties of this halo'''
-        
-        h = visnap.h
-        print 'halo properties:'
-        print 'Vmax = %g km/s, Rmax = %g kpc' % (self.props['Vmax'], 
-                                                 self.props['Rmax']/h) 
-        print 'Mvir = %g Msun, Rvir = %g kpc' % (self.props['Mvir']/h,
-                                                 self.props['Rvir']/h)
+
+        print '\nHalo properties at a = %g:' % self.catalog_attrs['a'] 
+        print 'Vmax = %g km/s, Rmax = %g kpc/h' % (self.props['Vmax'], 
+                                                 self.props['Rmax']) 
+        print 'Mvir = %g Msun/h, Rvir = %g kpc/h' % (self.props['Mvir'],
+                                                 self.props['Rvir'])
         print 'Center [Mpc] = ', self.props['Center'] 
         print 'Velocity [km/s] = ', self.props['Velocity']
         print 'Npart = ', self.props['npart']
@@ -141,7 +144,7 @@ class new_halo:
             print 'fMhires = ', self.props['fMhires']
             print 'com_offset = ', self.props['com_offset'] 
             print 'mbp_offset = ', self.props['mbp_offset']
-
+        print
 
     def track(self, trees_path='./trees/', trees_file_base='tree', ncpus='all' ):
         '''

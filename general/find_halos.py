@@ -6,12 +6,12 @@ from numpy import *
 from visnap.general import halo
 #import pdb
 
-def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
-                   prop='Mvir', N_mostparticles=5):
+def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,  
+                   prop='Mvir', prop_value=None, N_mostparticles=5):
     '''
-    Find the halo in the given catalog that most closely matches the properties
-    of the halo with zoom_id given in the halo_list file. This is Designed
-    to find Zoom halos in the hi-res region of a simulation, thus a selection
+    Find the halo in the given catalog that most closely matches the given property
+    or the properties of the halo with zoom_id given in the halo_list file. This is 
+    designed to find Zoom halos in the hi-res region of a simulation, thus a selection
     is done first consisting of the N_mostparticles halos with the most number
     of particles in the catalog, the best match within this selction will be
     returned.  
@@ -19,11 +19,11 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
     Input: 
     
      halo_list - A file containing a list of zoom halos with their zoom IDs and
-                 halo properties
+                 halo properties (if prop_value is not None halo_list will be ignored)
     
      zoom_id - A zoom halo ID (as set in the IRATE filename for a zoom
                simulation). Note that this is normally different to the halo ID
-               in the catalog.  
+               in the catalog (if prop_value is not None zoom_id will be ignored)
      
      irate_file - The name of the IRATE file containing the catalog
 
@@ -38,6 +38,10 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
 
      prop - property to use for the matching, can be "Mvir" (default), "Vmax",
             "Rvir", "Vel", "Spin" or "all"
+
+     prop_value - If given, halo_list and zoom_id will be ignored, and  
+                  prop_value will be used as the value for the halo property
+                  to match
      
      N_mostparticles - Number of halos in the initial selection of halos with
                        the most number of particles
@@ -51,10 +55,11 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
     '''
    
     # Get data from the zoom list
-    zoom_list = genfromtxt(halo_list)
-    ids = zoom_list.T[0]
-    arg = argwhere(ids == int(zoom_id))[0,0]
-    hid_l, Vx_l, Vy_l, Vz_l, Rvir_l, Mvir_l, Vmax_l, Spin_l = zoom_list[arg]
+    if prop_value == None:
+        zoom_list = genfromtxt(halo_list)
+        ids = zoom_list.T[0]
+        arg = argwhere(ids == int(zoom_id))[0,0]
+        hid_l, Vx_l, Vy_l, Vz_l, Rvir_l, Mvir_l, Vmax_l, Spin_l = zoom_list[arg]
 
     # open snapshot
     irate = h5py.File(irate_file,'r')
@@ -103,26 +108,34 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
         id_flag = 0
    
     # Compute distances    
-    VmaxDist, MvirDist, RvirDist = [(Vmax-Vmax_l)/Vmax_l,
-                                    (Mvir-Mvir_l)/Mvir_l, 
-                                    (Rvir-Rvir_l)/Rvir_l]
-    if spin_flag: SpinDist = (Spin-Spin_l)/Spin_l
-
-    VxDist, VyDist, VzDist = (Vx-Vx_l)/Vx_l,(Vy-Vy_l)/Vy_l,(Vz-Vz_l)/Vz_l
-    #vxDist, vyDist, vzDist = (Vx-vx_l),(Vy-vy_l),(Vz-vz_l)
-    VDist = sqrt(VxDist**2 + VyDist**2 + VzDist**2)
-    
+      
     if prop == 'Mvir':
+        if prop_value == None: MvirDist = (Mvir-Mvir_l)/Mvir_l
+        else:  MvirDist = (Mvir-prop_value)/prop_value
         dist = sqrt(MvirDist**2)
     elif prop == 'Vmax':
+        if prop_value == None: VmaxDist = (Vmax-Vmax_l)/Vmax_l
+        else:  VmaxDist = (Vmax-prop_value)/prop_value
         dist = sqrt(VmaxDist**2)
-    elif prop == 'Rvir':
+    elif prop == 'Rvir': 
+        if prop_value == None: RvirDist = (Rvir-Rvir_l)/Rvir_l
+        else: RvirDist = (Rvir-prop_value)/prop_value
         dist = sqrt(RvirDist**2)
     elif prop == 'Vel':
-        dist = sqrt(VDist**2)
+        if prop_value == None: 
+            VxDist, VyDist, VzDist = (Vx-Vx_l)/Vx_l,(Vy-Vy_l)/Vy_l,(Vz-Vz_l)/Vz_l
+        else:
+            VxDist, VyDist, VzDist = (Vx-prop_value[0])/prop_value[0],(Vy-prop_value[1])/prop_value[1],(Vz-prop_value[2])/prop_value[2]
+        VDist = sqrt(VxDist**2 + VyDist**2 + VzDist**2)    
+        dist = VDist
     elif prop == 'Spin':
+        if prop_value == None: SpinDist = (Spin-Spin_l)/Spin_l
+        else:  SpinDist = (Spin-prop_value)/prop_value
         dist = sqrt(SpinDist**2)
     elif prop == 'all':  
+        if prop_value != None:
+            print "A prop_value was given, thus you can not use prop='all'"
+            sys.exit()
         if spin_flag:
             dist = sqrt( VmaxDist**2 + MvirDist**2 + RvirDist**2 +
                             SpinDist**2 + VxDist**2 + VyDist**2 + VzDist**2 )
