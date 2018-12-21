@@ -134,12 +134,12 @@ class new_halo:
 
         print '\nHalo properties at a = %g:' % self.catalog_attrs['a'] 
         print 'Vmax = %g km/s, Rmax = %g kpc/h' % (self.props['Vmax'], 
-                                                 self.props['Rmax']) 
+                                                 self.props['Rvmax']) 
         print 'Mvir = %g Msun/h, Rvir = %g kpc/h' % (self.props['Mvir'],
                                                  self.props['Rvir'])
         print 'Center [Mpc] = ', self.props['Center'] 
         print 'Velocity [km/s] = ', self.props['Velocity']
-        print 'Npart = ', self.props['npart']
+        print 'Npart = ', self.props['Num_p']
         if 'AHF' in self.catalog: 
             print 'fMhires = ', self.props['fMhires']
             print 'com_offset = ', self.props['com_offset'] 
