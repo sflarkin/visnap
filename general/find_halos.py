@@ -81,7 +81,7 @@ def find_zoom_halo(halo_list, zoom_id, irate_file, snapshot, catalog,
         C = snap[catalog]
 
     # Get the properties of the N_mostparticles halos in the catalog    
-    npart = C['npart'][...]
+    npart = C['Num_p'][...]
     args = npart.argsort()[-N_mostparticles:]
     Vmax, Mvir, Rvir = [C['Vmax'][...][args], C['Mvir'][...][args],
                         C['Rvir'][...][args]]
@@ -208,7 +208,7 @@ def find_mostpart_halo(irate_file, snapshot, catalog, nhalos=1):
         C = irate[catalog]
 
     # Find halos with the largest number of particles    
-    npart = C['npart'][...]
+    npart = C['Num_p'][...]
     halo_args = npart.argsort()[-nhalos:][::-1]
 
     halos = []
@@ -266,7 +266,7 @@ def find_subhalos(halo_object, vcut_factor=0.05, rcut_factor=1.0, min_npart=100)
             subhalo_identify(C)
             hosts = C['Hosts'][...]
 
-    npart = C['npart'][...]  
+    npart = C['Num_p'][...]  
     vmax = C['Vmax'][...] 
     center  = C['Center'][...]
     center_units = C['Center'].attrs['unitname']
